@@ -4,6 +4,11 @@ const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const apiLogger = require('./middleware/logger');
 
+console.log('Environment variables loaded:');
+console.log('- JWT_SECRET:', process.env.JWT_SECRET ? 'Set' : 'Not set');
+console.log('- JWT_EXPIRATION:', process.env.JWT_EXPIRATION);
+console.log('- DB_PATH:', process.env.DB_PATH);
+
 const app = express();
 const port = process.env.PORT || 3001;
 
@@ -12,9 +17,9 @@ app.use(cors());
 app.use(express.json());
 
 // Database connection
-const db = new sqlite3.Database(process.env.DB_PATH, (err) => {
+const db = new sqlite3.Database(process.env.DB_PATH || './disaster_relief.db', (err) => {
     if (err) {
-        console.error('Error connecting to database:', err);
+        console.error('Database connection error:', err);
     } else {
         console.log('Connected to SQLite database');
     }

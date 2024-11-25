@@ -3,7 +3,8 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const sqlite3 = require('sqlite3').verbose();
-const { JWT_SECRET, verifyToken, checkRole, JWT_EXPIRATION } = require('../middleware/auth');
+const { verifyToken, checkRole, JWT_SECRET, JWT_EXPIRATION } = require('../middleware/auth');
+const { getRefIdByUserId } = require('../utils/db_utils');
 const db = new sqlite3.Database('./disaster_relief.db');
 
 // Moderator login
@@ -29,8 +30,14 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
+        // Get ref_id for the moderator
+        const ref_id = await getRefIdByUserId(moderator.id);
+        if (!ref_id) {
+            return res.status(500).json({ message: 'Error retrieving moderator reference' });
+        }
+
         // Generate JWT token using ref_id
-        const token = jwt.sign({ ref_id: moderator.ref_id }, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
+        const token = jwt.sign({ ref_id }, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
 
         res.json({
             message: 'Login successful',

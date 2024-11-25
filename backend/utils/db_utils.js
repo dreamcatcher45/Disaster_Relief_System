@@ -7,32 +7,108 @@ const generateRefId = () => {
     return crypto.randomBytes(4).toString('hex'); // 4 bytes = 8 hex digits
 };
 
-// Create user reference and return ref_id
-const createUserRef = () => {
+// Get user by ref_id (secure method)
+const getUserByRefId = (ref_id) => {
     return new Promise((resolve, reject) => {
-        const ref_id = generateRefId();
-        db.run('INSERT INTO user_refs (ref_id) VALUES (?)', [ref_id], function(err) {
+        console.log('Looking up user with ref_id:', ref_id);
+        const query = `
+            SELECT u.*, ur.ref_id 
+            FROM users u
+            JOIN user_refs ur ON ur.user_id = u.id
+            WHERE ur.ref_id = ?`;
+        
+        db.get(query, [ref_id], (err, user) => {
             if (err) {
-                if (err.code === 'SQLITE_CONSTRAINT') {
-                    // If duplicate, try again
-                    createUserRef().then(resolve).catch(reject);
-                } else {
-                    reject(err);
-                }
+                console.error('Error in getUserByRefId:', err);
+                reject(err);
             } else {
-                resolve(ref_id);
+                console.log('Found user:', user);
+                resolve(user);
             }
         });
     });
 };
 
-// Get user ID by reference ID
-const getUserByRefId = (ref_id) => {
+// Create user with transaction
+const createUser = async (userData) => {
     return new Promise((resolve, reject) => {
-        db.get('SELECT * FROM users WHERE ref_id = ?', [ref_id], (err, user) => {
-            if (err) reject(err);
-            else resolve(user);
+        db.serialize(() => {
+            db.run('BEGIN TRANSACTION');
+
+            // First create the user
+            db.run(
+                `INSERT INTO users (name, email, phone_number, address, password, role)
+                 VALUES (?, ?, ?, ?, ?, ?)`,
+                [
+                    userData.name,
+                    userData.email,
+                    userData.phone_number,
+                    userData.address,
+                    userData.password,
+                    userData.role
+                ],
+                function(err) {
+                    if (err) {
+                        db.run('ROLLBACK');
+                        reject(err);
+                        return;
+                    }
+                    
+                    const userId = this.lastID;
+                    const ref_id = generateRefId();
+
+                    // Then create the ref_id and link it to the user
+                    db.run(
+                        'INSERT INTO user_refs (ref_id, user_id) VALUES (?, ?)',
+                        [ref_id, userId],
+                        (err) => {
+                            if (err) {
+                                db.run('ROLLBACK');
+                                reject(err);
+                                return;
+                            }
+
+                            db.run('COMMIT', (err) => {
+                                if (err) {
+                                    db.run('ROLLBACK');
+                                    reject(err);
+                                    return;
+                                }
+                                resolve({ ...userData, ref_id, id: userId });
+                            });
+                        }
+                    );
+                }
+            );
         });
+    });
+};
+
+// Get ref_id by user ID
+const getRefIdByUserId = (userId) => {
+    return new Promise((resolve, reject) => {
+        db.get(
+            'SELECT ref_id FROM user_refs WHERE user_id = ?',
+            [userId],
+            (err, row) => {
+                if (err) reject(err);
+                else resolve(row ? row.ref_id : null);
+            }
+        );
+    });
+};
+
+// Get user ID by ref_id
+const getUserIdByRefId = (ref_id) => {
+    return new Promise((resolve, reject) => {
+        db.get(
+            'SELECT user_id FROM user_refs WHERE ref_id = ?',
+            [ref_id],
+            (err, row) => {
+                if (err) reject(err);
+                else resolve(row ? row.user_id : null);
+            }
+        );
     });
 };
 
@@ -79,41 +155,10 @@ const logApiActivity = ({
     });
 };
 
-// Create user with ref_id
-const createUser = async (userData) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const ref_id = await createUserRef();
-            const query = `
-                INSERT INTO users (ref_id, name, email, phone_number, address, password, role)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            `;
-            const params = [
-                ref_id,
-                userData.name,
-                userData.email,
-                userData.phone_number,
-                userData.address,
-                userData.password,
-                userData.role
-            ];
-
-            db.run(query, params, function(err) {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve({ ...userData, ref_id, id: this.lastID });
-                }
-            });
-        } catch (err) {
-            reject(err);
-        }
-    });
-};
-
 module.exports = {
-    createUserRef,
+    createUser,
     getUserByRefId,
-    logApiActivity,
-    createUser
+    getRefIdByUserId,
+    getUserIdByRefId,
+    logApiActivity
 };

@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const sqlite3 = require('sqlite3').verbose();
 const { verifyToken, checkRole, JWT_SECRET, JWT_EXPIRATION } = require('../middleware/auth');
-const { createUser } = require('../utils/db_utils');
+const { createUser, getRefIdByUserId } = require('../utils/db_utils');
 const db = new sqlite3.Database('./disaster_relief.db');
 
 // Register new user
@@ -26,9 +26,10 @@ router.post('/register', async (req, res) => {
         };
 
         const user = await createUser(userData);
+        const ref_id = await getRefIdByUserId(user.id);
 
         // Generate JWT token
-        const token = jwt.sign({ ref_id: user.ref_id }, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
+        const token = jwt.sign({ ref_id }, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
 
         res.status(201).json({
             message: 'User registered successfully',
@@ -66,8 +67,14 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
+        // Get ref_id for the user
+        const ref_id = await getRefIdByUserId(user.id);
+        if (!ref_id) {
+            return res.status(500).json({ message: 'Error retrieving user reference' });
+        }
+
         // Generate JWT token
-        const token = jwt.sign({ ref_id: user.ref_id }, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
+        const token = jwt.sign({ ref_id }, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
 
         res.json({
             message: 'Login successful',

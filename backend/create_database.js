@@ -31,22 +31,21 @@ const initializeDatabase = async () => {
         await runQuery(`CREATE TABLE IF NOT EXISTS user_refs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             ref_id TEXT UNIQUE NOT NULL,
+            user_id INTEGER UNIQUE,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
         console.log('User references table created');
 
-        // Create Users table with ref_id
+        // Create Users table with auto-incrementing id
         await runQuery(`CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            ref_id TEXT UNIQUE NOT NULL,
             name TEXT NOT NULL,
             email TEXT UNIQUE NOT NULL,
             phone_number TEXT UNIQUE NOT NULL,
             address TEXT,
             password TEXT NOT NULL,
             role TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(ref_id) REFERENCES user_refs(ref_id)
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
         console.log('Users table created');
 
@@ -139,7 +138,7 @@ const initializeDatabase = async () => {
         // Create indexes
         await runQuery('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)');
         await runQuery('CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone_number)');
-        await runQuery('CREATE INDEX IF NOT EXISTS idx_users_ref_id ON users(ref_id)');
+        await runQuery('CREATE INDEX IF NOT EXISTS idx_users_ref_id ON users(id)');
         await runQuery('CREATE INDEX IF NOT EXISTS idx_help_requests_status ON help_requests(status)');
         await runQuery('CREATE INDEX IF NOT EXISTS idx_support_requests_status ON support_requests(status)');
         await runQuery('CREATE INDEX IF NOT EXISTS idx_support_requests_user ON support_requests(user_ref_id)');
