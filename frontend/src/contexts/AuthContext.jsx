@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
+import Cookies from 'js-cookie';
+import { setAuthToken } from '../api/auth';
 
 const AuthContext = createContext(null);
 const TOKEN_KEY = import.meta.env.VITE_JWT_KEY;
@@ -14,12 +16,14 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    const token = localStorage.getItem(TOKEN_KEY);
+    const token = Cookies.get(TOKEN_KEY);
     if (token) {
       try {
+        setAuthToken(token);
         return jwtDecode(token);
       } catch (error) {
-        localStorage.removeItem(TOKEN_KEY);
+        Cookies.remove(TOKEN_KEY);
+        setAuthToken(null);
         return null;
       }
     }
@@ -27,18 +31,24 @@ export const AuthProvider = ({ children }) => {
   });
 
   const login = useCallback((token) => {
-    localStorage.setItem(TOKEN_KEY, token);
+    Cookies.set(TOKEN_KEY, token, { 
+      expires: 1, 
+      secure: true,
+      sameSite: 'strict'
+    });
+    setAuthToken(token);
     const decodedUser = jwtDecode(token);
     setUser(decodedUser);
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
+    Cookies.remove(TOKEN_KEY);
+    setAuthToken(null);
     setUser(null);
   }, []);
 
   const getToken = useCallback(() => {
-    return localStorage.getItem(TOKEN_KEY);
+    return Cookies.get(TOKEN_KEY);
   }, []);
 
   const value = {

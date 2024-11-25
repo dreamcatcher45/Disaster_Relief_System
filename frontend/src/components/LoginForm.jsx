@@ -1,187 +1,260 @@
 import { useState } from 'react';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
   Box,
   Button,
+  FormControl,
+  FormLabel,
   Input,
-  Stack,
-  Text,
-  Heading,
-  Alert,
+  VStack,
   Tabs,
   TabList,
-  TabPanels,
   Tab,
+  TabPanels,
   TabPanel,
+  Container,
+  Text,
+  Link,
+  useToast,
+  Heading,
+  InputGroup,
+  InputLeftElement,
+  Icon,
+  Card,
+  CardBody,
+  useColorModeValue,
 } from '@chakra-ui/react';
-import { login } from '../api/auth';
+import { FaMobileAlt, FaEnvelope, FaLock } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { login } from '../api/auth';
 
 const LoginForm = () => {
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [tabIndex, setTabIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const { login: authLogin } = useAuth();
-  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    phoneNumber: '',
+    email: '',
+    password: '',
+  });
 
-  const handleSubmit = async (role) => {
+  const navigate = useNavigate();
+  const { login: authLogin } = useAuth();
+  const toast = useToast();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setIsLoading(true);
-    setError('');
 
     try {
-      const loginData = {
-        password,
-        role,
-        ...(role === 'user' ? { phoneNumber } : { email })
-      };
-      const response = await login(loginData);
+      const role = tabIndex === 0 ? 'user' : tabIndex === 1 ? 'admin' : 'moderator';
+      const response = await login({ ...formData, role });
       authLogin(response.token);
       navigate('/dashboard');
     } catch (error) {
-      setError(error.message || 'Login failed');
+      toast({
+        title: 'Error',
+        description: error.message,
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleTabChange = () => {
-    // Clear fields when switching tabs
-    setEmail('');
-    setPhoneNumber('');
-    setPassword('');
-    setError('');
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   return (
-    <Box p={8} maxWidth="400px" mx="auto">
-      <Stack spacing={4}>
-        <Heading textAlign="center" mb={4}>Login</Heading>
-        {error && (
-          <Alert status="error">
-            {error}
-          </Alert>
-        )}
-        <Tabs isFitted variant="enclosed" onChange={handleTabChange}>
-          <TabList mb="1em">
-            <Tab>User</Tab>
-            <Tab>Admin</Tab>
-            <Tab>Moderator</Tab>
-          </TabList>
-          <TabPanels>
-            {/* User Panel */}
-            <TabPanel>
-              <Stack spacing={4} as="form" onSubmit={(e) => {
-                e.preventDefault();
-                handleSubmit('user');
-              }}>
-                <Stack spacing={2}>
-                  <Text fontWeight="medium">Phone Number</Text>
-                  <Input
-                    type="tel"
-                    placeholder="Enter phone number"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    pattern="[0-9]*"
-                    required
-                  />
-                </Stack>
-                <Stack spacing={2}>
-                  <Text fontWeight="medium">Password</Text>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </Stack>
-                <Button
-                  type="submit"
-                  colorScheme="blue"
-                  width="full"
-                  isLoading={isLoading}
-                >
-                  Login as User
-                </Button>
-              </Stack>
-            </TabPanel>
+    <Container maxW="container.sm" centerContent py={8}>
+      <VStack spacing={8} w="full" maxW="md">
+        <VStack spacing={2} align="center">
+          <Heading size="xl">Welcome Back</Heading>
+          <Text fontSize="lg" opacity={0.8}>
+            Sign in to your account
+          </Text>
+        </VStack>
 
-            {/* Admin Panel */}
-            <TabPanel>
-              <Stack spacing={4} as="form" onSubmit={(e) => {
-                e.preventDefault();
-                handleSubmit('admin');
-              }}>
-                <Stack spacing={2}>
-                  <Text fontWeight="medium">Email</Text>
-                  <Input
-                    type="email"
-                    placeholder="Enter email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </Stack>
-                <Stack spacing={2}>
-                  <Text fontWeight="medium">Password</Text>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </Stack>
-                <Button
-                  type="submit"
-                  colorScheme="blue"
-                  width="full"
-                  isLoading={isLoading}
-                >
-                  Login as Admin
-                </Button>
-              </Stack>
-            </TabPanel>
+        <Card w="full" variant="elevated" boxShadow="xl" bg={useColorModeValue('white', 'gray.800')}>
+          <CardBody>
+            <Tabs isFitted variant="enclosed" colorScheme="brand" onChange={setTabIndex}>
+              <TabList mb="1em">
+                <Tab _selected={{ color: 'brand.400', borderColor: 'brand.400' }}>User</Tab>
+                <Tab _selected={{ color: 'brand.400', borderColor: 'brand.400' }}>Admin</Tab>
+                <Tab _selected={{ color: 'brand.400', borderColor: 'brand.400' }}>Moderator</Tab>
+              </TabList>
 
-            {/* Moderator Panel */}
-            <TabPanel>
-              <Stack spacing={4} as="form" onSubmit={(e) => {
-                e.preventDefault();
-                handleSubmit('moderator');
-              }}>
-                <Stack spacing={2}>
-                  <Text fontWeight="medium">Email</Text>
-                  <Input
-                    type="email"
-                    placeholder="Enter email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </Stack>
-                <Stack spacing={2}>
-                  <Text fontWeight="medium">Password</Text>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </Stack>
-                <Button
-                  type="submit"
-                  colorScheme="blue"
-                  width="full"
-                  isLoading={isLoading}
-                >
-                  Login as Moderator
-                </Button>
-              </Stack>
-            </TabPanel>
-          </TabPanels>
-        </Tabs>
-      </Stack>
-    </Box>
+              <TabPanels>
+                <TabPanel>
+                  <form onSubmit={handleSubmit}>
+                    <VStack spacing={4}>
+                      <FormControl isRequired>
+                        <FormLabel>Phone Number</FormLabel>
+                        <InputGroup>
+                          <InputLeftElement pointerEvents="none">
+                            <Icon as={FaMobileAlt} color="gray.500" />
+                          </InputLeftElement>
+                          <Input
+                            type="tel"
+                            name="phoneNumber"
+                            value={formData.phoneNumber}
+                            onChange={handleChange}
+                            placeholder="Enter phone number"
+                            bg={useColorModeValue('gray.50', 'gray.700')}
+                          />
+                        </InputGroup>
+                      </FormControl>
+                      <FormControl isRequired>
+                        <FormLabel>Password</FormLabel>
+                        <InputGroup>
+                          <InputLeftElement pointerEvents="none">
+                            <Icon as={FaLock} color="gray.500" />
+                          </InputLeftElement>
+                          <Input
+                            type="password"
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            placeholder="Enter password"
+                            bg={useColorModeValue('gray.50', 'gray.700')}
+                          />
+                        </InputGroup>
+                      </FormControl>
+                      <Button
+                        type="submit"
+                        colorScheme="brand"
+                        w="full"
+                        size="lg"
+                        isLoading={isLoading}
+                        loadingText="Signing in..."
+                      >
+                        Sign In
+                      </Button>
+                    </VStack>
+                  </form>
+                </TabPanel>
+
+                <TabPanel>
+                  <form onSubmit={handleSubmit}>
+                    <VStack spacing={4}>
+                      <FormControl isRequired>
+                        <FormLabel>Email</FormLabel>
+                        <InputGroup>
+                          <InputLeftElement pointerEvents="none">
+                            <Icon as={FaEnvelope} color="gray.500" />
+                          </InputLeftElement>
+                          <Input
+                            type="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            placeholder="Enter email"
+                            bg={useColorModeValue('gray.50', 'gray.700')}
+                          />
+                        </InputGroup>
+                      </FormControl>
+                      <FormControl isRequired>
+                        <FormLabel>Password</FormLabel>
+                        <InputGroup>
+                          <InputLeftElement pointerEvents="none">
+                            <Icon as={FaLock} color="gray.500" />
+                          </InputLeftElement>
+                          <Input
+                            type="password"
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            placeholder="Enter password"
+                            bg={useColorModeValue('gray.50', 'gray.700')}
+                          />
+                        </InputGroup>
+                      </FormControl>
+                      <Button
+                        type="submit"
+                        colorScheme="brand"
+                        w="full"
+                        size="lg"
+                        isLoading={isLoading}
+                        loadingText="Signing in..."
+                      >
+                        Sign In
+                      </Button>
+                    </VStack>
+                  </form>
+                </TabPanel>
+
+                <TabPanel>
+                  <form onSubmit={handleSubmit}>
+                    <VStack spacing={4}>
+                      <FormControl isRequired>
+                        <FormLabel>Email</FormLabel>
+                        <InputGroup>
+                          <InputLeftElement pointerEvents="none">
+                            <Icon as={FaEnvelope} color="gray.500" />
+                          </InputLeftElement>
+                          <Input
+                            type="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            placeholder="Enter email"
+                            bg={useColorModeValue('gray.50', 'gray.700')}
+                          />
+                        </InputGroup>
+                      </FormControl>
+                      <FormControl isRequired>
+                        <FormLabel>Password</FormLabel>
+                        <InputGroup>
+                          <InputLeftElement pointerEvents="none">
+                            <Icon as={FaLock} color="gray.500" />
+                          </InputLeftElement>
+                          <Input
+                            type="password"
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            placeholder="Enter password"
+                            bg={useColorModeValue('gray.50', 'gray.700')}
+                          />
+                        </InputGroup>
+                      </FormControl>
+                      <Button
+                        type="submit"
+                        colorScheme="brand"
+                        w="full"
+                        size="lg"
+                        isLoading={isLoading}
+                        loadingText="Signing in..."
+                      >
+                        Sign In
+                      </Button>
+                    </VStack>
+                  </form>
+                </TabPanel>
+              </TabPanels>
+            </Tabs>
+          </CardBody>
+        </Card>
+
+        <Text>
+          Don't have an account?{' '}
+          <Link
+            as={RouterLink}
+            to="/signup"
+            color="brand.200"
+            fontWeight="semibold"
+            _hover={{ color: 'brand.300' }}
+          >
+            Sign up
+          </Link>
+        </Text>
+      </VStack>
+    </Container>
   );
 };
 
