@@ -17,12 +17,14 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     const token = Cookies.get(TOKEN_KEY);
-    if (token) {
+    const userInfo = Cookies.get('user_info');
+    if (token && userInfo) {
       try {
         setAuthToken(token);
-        return jwtDecode(token);
+        return JSON.parse(userInfo);
       } catch (error) {
         Cookies.remove(TOKEN_KEY);
+        Cookies.remove('user_info');
         setAuthToken(null);
         return null;
       }
@@ -30,19 +32,27 @@ export const AuthProvider = ({ children }) => {
     return null;
   });
 
-  const login = useCallback((token) => {
+  const login = useCallback((response) => {
+    const { token, user } = response;
     Cookies.set(TOKEN_KEY, token, { 
       expires: 1, 
       secure: true,
       sameSite: 'strict'
     });
     setAuthToken(token);
-    const decodedUser = jwtDecode(token);
-    setUser(decodedUser);
+    
+    // Store user info in a separate cookie
+    Cookies.set('user_info', JSON.stringify(user), { 
+      expires: 1, 
+      secure: true,
+      sameSite: 'strict'
+    });
+    setUser(user);
   }, []);
 
   const logout = useCallback(() => {
     Cookies.remove(TOKEN_KEY);
+    Cookies.remove('user_info');
     setAuthToken(null);
     setUser(null);
   }, []);

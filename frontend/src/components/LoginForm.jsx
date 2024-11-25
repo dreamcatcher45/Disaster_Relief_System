@@ -48,8 +48,14 @@ const LoginForm = () => {
     try {
       const role = tabIndex === 0 ? 'user' : tabIndex === 1 ? 'admin' : 'moderator';
       const response = await login({ ...formData, role });
-      authLogin(response.token);
+      authLogin(response);
       navigate('/dashboard');
+      toast({
+        title: 'Login successful',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
     } catch (error) {
       toast({
         title: 'Error',
