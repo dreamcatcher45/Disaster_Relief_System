@@ -78,7 +78,7 @@ const initializeDatabase = async () => {
             status TEXT DEFAULT 'active' CHECK(status IN ('active', 'completed')),
             created_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             priority TEXT DEFAULT 'medium' CHECK(priority IN ('high', 'medium', 'low')),
-            logistic_status TEXT DEFAULT 'pending',
+            logistic_status TEXT DEFAULT 'pending' CHECK(logistic_status IN ('pending', 'accepted', 'received', 'delivered', 'completed')),
             user_ref_id TEXT,
             FOREIGN KEY(user_ref_id) REFERENCES user_refs(ref_id)
         )`);
@@ -96,11 +96,54 @@ const initializeDatabase = async () => {
         )`);
         console.log('Request items table created');
 
+        // Create Support Requests table
+        await runQuery(`CREATE TABLE IF NOT EXISTS support_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            help_request_id INTEGER NOT NULL,
+            user_ref_id TEXT NOT NULL,
+            status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'accepted', 'rejected', 'completed')),
+            notes TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(help_request_id) REFERENCES help_requests(id),
+            FOREIGN KEY(user_ref_id) REFERENCES user_refs(ref_id)
+        )`);
+        console.log('Support requests table created');
+
+        // Create Support Request Items table
+        await runQuery(`CREATE TABLE IF NOT EXISTS support_request_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            support_request_id INTEGER NOT NULL,
+            request_item_id INTEGER NOT NULL,
+            quantity_offered INTEGER NOT NULL,
+            notes TEXT,
+            FOREIGN KEY(support_request_id) REFERENCES support_requests(id),
+            FOREIGN KEY(request_item_id) REFERENCES request_items(id)
+        )`);
+        console.log('Support request items table created');
+
+        // Create Logistics Tracking table
+        await runQuery(`CREATE TABLE IF NOT EXISTS logistics_tracking (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            support_request_id INTEGER NOT NULL,
+            previous_status TEXT NOT NULL,
+            new_status TEXT NOT NULL,
+            handler_ref_id TEXT NOT NULL,
+            notes TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(support_request_id) REFERENCES support_requests(id),
+            FOREIGN KEY(handler_ref_id) REFERENCES user_refs(ref_id)
+        )`);
+        console.log('Logistics tracking table created');
+
         // Create indexes
         await runQuery('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)');
         await runQuery('CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone_number)');
         await runQuery('CREATE INDEX IF NOT EXISTS idx_users_ref_id ON users(ref_id)');
         await runQuery('CREATE INDEX IF NOT EXISTS idx_help_requests_status ON help_requests(status)');
+        await runQuery('CREATE INDEX IF NOT EXISTS idx_support_requests_status ON support_requests(status)');
+        await runQuery('CREATE INDEX IF NOT EXISTS idx_support_requests_user ON support_requests(user_ref_id)');
+        await runQuery('CREATE INDEX IF NOT EXISTS idx_logistics_support_request ON logistics_tracking(support_request_id)');
         await runQuery('CREATE INDEX IF NOT EXISTS idx_api_logs_ref_id ON api_logs(user_ref_id)');
         await runQuery('CREATE INDEX IF NOT EXISTS idx_api_logs_timestamp ON api_logs(timestamp)');
         console.log('Indexes created');

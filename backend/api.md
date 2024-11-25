@@ -117,6 +117,84 @@ curl -X POST http://localhost:3000/api/privilege/help-requests \
   }'
 ```
 
+## Support and Logistics APIs
+
+### Create Support Request (User Only)
+```bash
+curl -X POST http://localhost:3000/api/user/support-requests \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{
+    "help_request_id": 1,
+    "items": [
+      {
+        "request_item_id": 1,
+        "quantity_offered": 5,
+        "notes": "Can deliver by tomorrow"
+      },
+      {
+        "request_item_id": 2,
+        "quantity_offered": 10,
+        "notes": "Available immediately"
+      }
+    ],
+    "notes": "I can help with these items"
+  }'
+```
+
+### View User's Help Requests
+```bash
+curl -X GET http://localhost:3000/api/user/help-requests \
+  -H "Authorization: Bearer <token>"
+```
+
+### View User's Support Requests
+```bash
+curl -X GET http://localhost:3000/api/user/support-requests \
+  -H "Authorization: Bearer <token>"
+```
+
+### List Support Requests (Moderator/Admin)
+```bash
+curl -X GET http://localhost:3000/api/privilege/support-requests \
+  -H "Authorization: Bearer <token>" \
+  -G \
+  -d status=pending \
+  -d help_request_id=1
+```
+
+### Review Support Request (Moderator/Admin)
+```bash
+curl -X POST http://localhost:3000/api/privilege/support-requests/1/review \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{
+    "action": "accept",
+    "notes": "Approved after verification"
+  }'
+```
+
+### Update Logistics Status (Moderator/Admin)
+```bash
+curl -X POST http://localhost:3000/api/privilege/logistics/1/status \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{
+    "new_status": "received",
+    "notes": "Items received at collection center"
+  }'
+```
+
+### View Logistics History (Moderator/Admin)
+```bash
+curl -X GET http://localhost:3000/api/privilege/logistics/history \
+  -H "Authorization: Bearer <token>" \
+  -G \
+  -d support_request_id=1 \
+  -d status=received \
+  -d start_date="2024-01-01" \
+  -d end_date="2024-12-31"
+```
 
 ## API Logging
 All API requests are automatically logged with the following information:
