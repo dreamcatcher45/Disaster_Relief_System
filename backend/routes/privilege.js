@@ -56,7 +56,8 @@ router.get('/support-requests', verifyToken, checkRole(['moderator', 'admin']), 
             SELECT sr.*, hr.title as help_request_title, u.name as requester_name
             FROM support_requests sr
             JOIN help_requests hr ON hr.id = sr.help_request_id
-            JOIN users u ON u.ref_id = sr.user_ref_id
+            JOIN user_refs ur ON ur.ref_id = sr.user_ref_id
+            JOIN users u ON u.id = ur.user_id
             WHERE 1=1
         `;
         const params = [];
@@ -394,8 +395,10 @@ router.get('/logistics/history', verifyToken, checkRole(['moderator', 'admin']),
             FROM logistics_tracking lt
             JOIN support_requests sr ON sr.id = lt.support_request_id
             JOIN help_requests hr ON hr.id = sr.help_request_id
-            JOIN users u1 ON u1.ref_id = lt.handler_ref_id
-            JOIN users u2 ON u2.ref_id = sr.user_ref_id
+            JOIN user_refs ur1 ON ur1.ref_id = lt.handler_ref_id
+            JOIN users u1 ON u1.id = ur1.user_id
+            JOIN user_refs ur2 ON ur2.ref_id = sr.user_ref_id
+            JOIN users u2 ON u2.id = ur2.user_id
             WHERE 1=1
         `;
         const params = [];
