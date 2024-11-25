@@ -78,6 +78,33 @@ curl -X POST http://localhost:3000/api/admin/create-moderator \
   }'
 ```
 
+### List Users (Admin Only)
+```bash
+# List all users
+curl -X GET http://localhost:3000/api/admin/users \
+  -H "Authorization: Bearer <admin_token>"
+
+# Filter by role (user/moderator)
+curl -X GET http://localhost:3000/api/admin/users?role=moderator \
+  -H "Authorization: Bearer <admin_token>"
+```
+
+### Delete User (Admin Only)
+```bash
+curl -X DELETE http://localhost:3000/api/admin/users/1a2b3c4d \
+  -H "Authorization: Bearer <admin_token>"
+```
+
+### Change User Role (Admin Only)
+```bash
+curl -X PUT http://localhost:3000/api/admin/users/1a2b3c4d/role \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <admin_token>" \
+  -d '{
+    "new_role": "moderator"
+  }'
+```
+
 ## Moderator APIs
 
 ### Login Moderator
