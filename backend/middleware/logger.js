@@ -15,12 +15,31 @@ const apiLogger = async (req, res, next) => {
     next();
 
     try {
+        // Get user info from either authenticated user or decoded token
+        const userRefId = req.user?.ref_id || req.logUser?.ref_id || null;
+        const userRole = req.user?.role || req.logUser?.role || null;
+
+        console.log('[API Logger] User info:', {
+            fromUser: {
+                ref_id: req.user?.ref_id,
+                role: req.user?.role
+            },
+            fromLogUser: {
+                ref_id: req.logUser?.ref_id,
+                role: req.logUser?.role
+            },
+            final: {
+                userRefId,
+                userRole
+            }
+        });
+
         // After response is sent, log the activity
         await logApiActivity({
-            user_ref_id: req.user?.ref_id,
+            user_ref_id: userRefId,
             action: `${req.method} ${req.path}`,
             jwt_token: req.headers['authorization']?.split(' ')[1],
-            role: req.user?.role,
+            role: userRole,
             api_url: req.originalUrl,
             method: req.method,
             request_body: req.body,
@@ -30,7 +49,7 @@ const apiLogger = async (req, res, next) => {
             user_agent: req.get('user-agent')
         });
     } catch (error) {
-        console.error('Error logging API activity:', error);
+        console.error('[API Logger] Error logging API activity:', error);
     }
 };
 

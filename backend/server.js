@@ -3,6 +3,7 @@ const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const apiLogger = require('./middleware/logger');
+const jwt = require('jsonwebtoken');
 
 console.log('Environment variables loaded:');
 console.log('- JWT_SECRET:', process.env.JWT_SECRET ? 'Set' : 'Not set');
@@ -28,6 +29,45 @@ const db = new sqlite3.Database(process.env.DB_PATH || './disaster_relief.db', (
 // Make db available in request object
 app.use((req, res, next) => {
     req.db = db;
+    next();
+});
+
+// Extract user info for logging if available
+app.use(async (req, res, next) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    console.log('[Logger Middleware] Token:', token);
+    
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            console.log('[Logger Middleware] Decoded token:', decoded);
+            
+            // Get user from database to ensure we have role
+            const user = await new Promise((resolve, reject) => {
+                req.db.get(
+                    `SELECT u.*, ur.ref_id 
+                     FROM users u 
+                     JOIN user_refs ur ON ur.user_id = u.id 
+                     WHERE ur.ref_id = ?`,
+                    [decoded.ref_id],
+                    (err, row) => {
+                        if (err) reject(err);
+                        resolve(row);
+                    }
+                );
+            });
+            
+            if (user) {
+                req.logUser = {
+                    ref_id: user.ref_id,
+                    role: user.role
+                };
+                console.log('[Logger Middleware] Set logUser:', req.logUser);
+            }
+        } catch (error) {
+            console.error('[Logger Middleware] Token verification error:', error);
+        }
+    }
     next();
 });
 
