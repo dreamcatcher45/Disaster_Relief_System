@@ -62,6 +62,9 @@ const Dashboard = () => {
     items: []
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userHelpRequests, setUserHelpRequests] = useState([]);
+  const [userSupportRequests, setUserSupportRequests] = useState([]);
+  const [activeView, setActiveView] = useState('dashboard'); // 'dashboard', 'helpRequests', 'supportRequests'
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -84,6 +87,45 @@ const Dashboard = () => {
     };
 
     fetchHelpRequests();
+  }, []);
+
+  useEffect(() => {
+    const fetchUserRequests = async () => {
+      try {
+        const token = Cookies.get(import.meta.env.VITE_JWT_KEY);
+        if (!token) {
+          throw new Error('Authentication token not found');
+        }
+
+        // Fetch help requests
+        const helpResponse = await fetch('http://localhost:3000/api/user/help-requests', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!helpResponse.ok) throw new Error('Failed to fetch help requests');
+        const helpData = await helpResponse.json();
+        setUserHelpRequests(helpData.data);
+
+        // Fetch support requests
+        const supportResponse = await fetch('http://localhost:3000/api/user/support-requests', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!supportResponse.ok) throw new Error('Failed to fetch support requests');
+        const supportData = await supportResponse.json();
+        setUserSupportRequests(supportData.data);
+
+      } catch (error) {
+        console.error('Error fetching requests:', error);
+        setError(error.message);
+      }
+    };
+
+    fetchUserRequests();
   }, []);
 
   useEffect(() => {
@@ -223,63 +265,59 @@ const Dashboard = () => {
     }));
   };
 
-  if (isLoading) {
-    return (
-      <Container centerContent>
-        <Spinner size="xl" />
-      </Container>
-    );
-  }
-
   const renderTableView = () => (
     <Card bg={cardBgColor} borderColor={borderColor} boxShadow="sm">
       <CardHeader>
         <Heading size="md" color={textColor}>Help Requests</Heading>
       </CardHeader>
       <CardBody>
-        <Table variant="simple">
-          <Thead>
-            <Tr>
-              <Th color={textColor}>ID</Th>
-              <Th color={textColor}>Title</Th>
-              <Th color={textColor}>Status</Th>
-              <Th color={textColor}>Created At</Th>
-              <Th color={textColor}>Actions</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {helpRequests.map((request) => (
-              <Tr key={request.id}>
-                <Td color={textColor}>{request.id}</Td>
-                <Td color={textColor}>{request.title}</Td>
-                <Td>
-                  <Badge
-                    colorScheme={
-                      request.status === 'pending'
-                        ? 'yellow'
-                        : request.status === 'approved'
-                        ? 'green'
-                        : 'red'
-                    }
-                  >
-                    {request.status}
-                  </Badge>
-                </Td>
-                <Td color={textColor}>
-                  {new Date(request.created_timestamp).toLocaleDateString()}
-                </Td>
-                <Td>
-                  <IconButton
-                    icon={<ViewIcon />}
-                    colorScheme="blue"
-                    aria-label="View details"
-                    onClick={() => handleViewRequest(request)}
-                  />
-                </Td>
+        {helpRequests.length === 0 ? (
+          <Text textAlign="center" py={10} color="gray.500">No help requests available</Text>
+        ) : (
+          <Table variant="simple">
+            <Thead>
+              <Tr>
+                <Th color={textColor}>ID</Th>
+                <Th color={textColor}>Title</Th>
+                <Th color={textColor}>Status</Th>
+                <Th color={textColor}>Created At</Th>
+                <Th color={textColor}>Actions</Th>
               </Tr>
-            ))}
-          </Tbody>
-        </Table>
+            </Thead>
+            <Tbody>
+              {helpRequests.map((request) => (
+                <Tr key={request.id}>
+                  <Td color={textColor}>{request.id}</Td>
+                  <Td color={textColor}>{request.title}</Td>
+                  <Td>
+                    <Badge
+                      colorScheme={
+                        request.status === 'pending'
+                          ? 'yellow'
+                          : request.status === 'approved'
+                          ? 'green'
+                          : 'red'
+                      }
+                    >
+                      {request.status}
+                    </Badge>
+                  </Td>
+                  <Td color={textColor}>
+                    {new Date(request.created_timestamp).toLocaleDateString()}
+                  </Td>
+                  <Td>
+                    <IconButton
+                      icon={<ViewIcon />}
+                      colorScheme="blue"
+                      aria-label="View details"
+                      onClick={() => handleViewRequest(request)}
+                    />
+                  </Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        )}
       </CardBody>
     </Card>
   );
@@ -441,6 +479,114 @@ const Dashboard = () => {
     </Card>
   );
 
+  const renderHelpRequestsTable = () => (
+    <Card>
+      <CardHeader>
+        <Heading size="md">My Help Requests</Heading>
+      </CardHeader>
+      <CardBody>
+        {userHelpRequests.length === 0 ? (
+          <Text textAlign="center" py={10} color="gray.500">You haven't created any help requests yet</Text>
+        ) : (
+          <Table variant="simple">
+            <Thead>
+              <Tr>
+                <Th>Title</Th>
+                <Th>Status</Th>
+                <Th>Priority</Th>
+                <Th>Created At</Th>
+                <Th>Items</Th>
+                <Th>Support Count</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {userHelpRequests.map((request) => (
+                <Tr key={request.id}>
+                  <Td>{request.title}</Td>
+                  <Td>
+                    <Badge colorScheme={request.status === 'active' ? 'green' : 'gray'}>
+                      {request.status}
+                    </Badge>
+                  </Td>
+                  <Td>
+                    <Badge colorScheme={
+                      request.priority === 'high' ? 'red' : 
+                      request.priority === 'medium' ? 'yellow' : 'blue'
+                    }>
+                      {request.priority}
+                    </Badge>
+                  </Td>
+                  <Td>{new Date(request.created_timestamp).toLocaleDateString()}</Td>
+                  <Td>{request.items.length}</Td>
+                  <Td>{request.support_request_count}</Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        )}
+      </CardBody>
+    </Card>
+  );
+
+  const renderSupportRequestsTable = () => (
+    <Card>
+      <CardHeader>
+        <Heading size="md">My Support Requests</Heading>
+      </CardHeader>
+      <CardBody>
+        {userSupportRequests.length === 0 ? (
+          <Text textAlign="center" py={10} color="gray.500">You haven't made any support requests yet</Text>
+        ) : (
+          <Table variant="simple">
+            <Thead>
+              <Tr>
+                <Th>Help Request</Th>
+                <Th>Status</Th>
+                <Th>Created At</Th>
+                <Th>Items Offered</Th>
+                <Th>Logistics Status</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {userSupportRequests.map((request) => (
+                <Tr key={request.id}>
+                  <Td>{request.help_request_title}</Td>
+                  <Td>
+                    <Badge colorScheme={
+                      request.status === 'accepted' ? 'green' :
+                      request.status === 'pending' ? 'yellow' : 'red'
+                    }>
+                      {request.status}
+                    </Badge>
+                  </Td>
+                  <Td>{new Date(request.created_at).toLocaleDateString()}</Td>
+                  <Td>{request.items.length}</Td>
+                  <Td>
+                    {request.latest_logistics ? (
+                      <Badge colorScheme={
+                        request.latest_logistics.new_status === 'received' ? 'green' : 'yellow'
+                      }>
+                        {request.latest_logistics.new_status}
+                      </Badge>
+                    ) : 'N/A'}
+                  </Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        )}
+      </CardBody>
+    </Card>
+  );
+
+  if (isLoading) {
+    return (
+      <Container centerContent>
+        <Spinner size="xl" />
+      </Container>
+    );
+  }
+
   return (
     <Container maxW="container.xl" py={5}>
       <Card mb={5} bg={cardBgColor} borderColor={borderColor} boxShadow="md">
@@ -448,17 +594,44 @@ const Dashboard = () => {
           <HStack justify="space-between" align="center">
             <Box>
               <Heading size="md" color={textColor}>Welcome, {user?.name || 'User'}</Heading>
-              <Badge 
-                colorScheme={user?.role === 'admin' ? 'red' : user?.role === 'moderator' ? 'purple' : 'green'}
+              <Badge
+                colorScheme="blue"
+                variant="solid"
                 fontSize="sm"
                 mt={2}
               >
                 {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}
               </Badge>
             </Box>
-            <Button colorScheme="red" onClick={onLogoutClick}>
-              Logout
-            </Button>
+            <HStack spacing={2}>
+              <Button
+                colorScheme="blue"
+                onClick={() => setActiveView('dashboard')}
+                size="sm"
+                variant={activeView === 'dashboard' ? 'solid' : 'outline'}
+              >
+                Dashboard
+              </Button>
+              <Button
+                colorScheme="blue"
+                onClick={() => setActiveView('helpRequests')}
+                size="sm"
+                variant={activeView === 'helpRequests' ? 'solid' : 'outline'}
+              >
+                My Help Requests
+              </Button>
+              <Button
+                colorScheme="blue"
+                onClick={() => setActiveView('supportRequests')}
+                size="sm"
+                variant={activeView === 'supportRequests' ? 'solid' : 'outline'}
+              >
+                My Support Requests
+              </Button>
+              <Button colorScheme="red" onClick={onLogoutClick} size="sm">
+                Logout
+              </Button>
+            </HStack>
           </HStack>
           <Divider my={4} borderColor="gray.600" />
         </CardHeader>
@@ -468,7 +641,9 @@ const Dashboard = () => {
               {error}
             </Alert>
           )}
-          {viewMode === 'table' ? renderTableView() : renderCardView()}
+          {activeView === 'dashboard' && (viewMode === 'table' ? renderTableView() : renderCardView())}
+          {activeView === 'helpRequests' && renderHelpRequestsTable()}
+          {activeView === 'supportRequests' && renderSupportRequestsTable()}
         </CardBody>
       </Card>
 
