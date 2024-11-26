@@ -40,6 +40,26 @@ const HelpRequestTable = () => {
   const textColor = useColorModeValue('gray.800', 'white');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
 
+  const formatDate = (dateString) => {
+    try {
+      if (!dateString) return 'N/A';
+      const [datePart, timePart] = dateString.split(' ');
+      const [year, month, day] = datePart.split('-');
+      const [hour, minute, second] = timePart.split(':');
+      
+      const date = new Date(year, month - 1, day, hour, minute, second);
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return 'N/A';
+    }
+  };
+
   useEffect(() => {
     fetchHelpRequests();
   }, []);
@@ -120,7 +140,6 @@ const HelpRequestTable = () => {
             <Thead>
               <Tr>
                 <Th>ID</Th>
-                <Th>User</Th>
                 <Th>Description</Th>
                 <Th>Status</Th>
                 <Th>Created At</Th>
@@ -131,7 +150,6 @@ const HelpRequestTable = () => {
               {helpRequests.map((request) => (
                 <Tr key={request.id}>
                   <Td>{request.id}</Td>
-                  <Td>{request.user_email}</Td>
                   <Td>{request.description}</Td>
                   <Td>
                     <Badge
@@ -144,7 +162,7 @@ const HelpRequestTable = () => {
                       {request.status.replace('_', ' ').toUpperCase()}
                     </Badge>
                   </Td>
-                  <Td>{new Date(request.created_at).toLocaleString()}</Td>
+                  <Td>{formatDate(request.created_timestamp)}</Td>
                   <Td>
                     <HStack spacing={2}>
                       <IconButton
@@ -195,26 +213,8 @@ const HelpRequestTable = () => {
                   <Text color={textColor}>{selectedRequest.id}</Text>
                 </GridItem>
                 <GridItem>
-                  <Text fontWeight="bold" mb={2}>User</Text>
-                  <Text color={textColor}>{selectedRequest.user_email}</Text>
-                </GridItem>
-                <GridItem>
-                  <Text fontWeight="bold" mb={2}>Status</Text>
-                  <Badge
-                    colorScheme={
-                      selectedRequest.status === 'pending' ? 'yellow' :
-                      selectedRequest.status === 'in_progress' ? 'blue' :
-                      selectedRequest.status === 'resolved' ? 'green' : 'gray'
-                    }
-                  >
-                    {selectedRequest.status.replace('_', ' ').toUpperCase()}
-                  </Badge>
-                </GridItem>
-                <GridItem>
                   <Text fontWeight="bold" mb={2}>Created At</Text>
-                  <Text color={textColor}>
-                    {new Date(selectedRequest.created_at).toLocaleString()}
-                  </Text>
+                  <Text color={textColor}>{formatDate(selectedRequest.created_timestamp)}</Text>
                 </GridItem>
                 <GridItem colSpan={2}>
                   <Text fontWeight="bold" mb={2}>Description</Text>
