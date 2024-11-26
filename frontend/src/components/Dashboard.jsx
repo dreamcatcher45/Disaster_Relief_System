@@ -41,6 +41,7 @@ import {
   NumberDecrementStepper,
   Textarea,
   useToast,
+  Select
 } from '@chakra-ui/react';
 import { ViewIcon, ArrowBackIcon } from '@chakra-ui/icons';
 import { useAuth } from '../contexts/AuthContext';
@@ -65,6 +66,14 @@ const Dashboard = () => {
   const [userHelpRequests, setUserHelpRequests] = useState([]);
   const [userSupportRequests, setUserSupportRequests] = useState([]);
   const [activeView, setActiveView] = useState('dashboard'); // 'dashboard', 'helpRequests', 'supportRequests'
+  const [isCreateHelpRequestModalOpen, setIsCreateHelpRequestModalOpen] = useState(false);
+  const [createHelpRequestForm, setCreateHelpRequestForm] = useState({
+    title: '',
+    description: '',
+    address: '',
+    priority: 'medium',
+    items: [{ name: '', qty: 0, need_qty: 0 }]
+  });
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -260,6 +269,98 @@ const Dashboard = () => {
       items: prev.items.map((item, i) => 
         i === index 
           ? { ...item, notes: value }
+          : item
+      )
+    }));
+  };
+
+  const handleCreateHelpRequest = async () => {
+    try {
+      setIsSubmitting(true);
+      const token = Cookies.get(import.meta.env.VITE_JWT_KEY);
+      
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
+
+      const response = await fetch('http://localhost:3000/api/privilege/help-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(createHelpRequestForm)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create help request');
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Help request created successfully',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+
+      setIsCreateHelpRequestModalOpen(false);
+      setCreateHelpRequestForm({
+        title: '',
+        description: '',
+        address: '',
+        priority: 'medium',
+        items: [{ name: '', qty: 0, need_qty: 0 }]
+      });
+      
+      // Refresh help requests
+      const helpResponse = await fetch('http://localhost:3000/api/user/help-requests', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (helpResponse.ok) {
+        const helpData = await helpResponse.json();
+        setUserHelpRequests(helpData.data);
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const addItem = () => {
+    setCreateHelpRequestForm(prev => ({
+      ...prev,
+      items: [...prev.items, { name: '', qty: 0, need_qty: 0 }]
+    }));
+  };
+
+  const removeItem = (index) => {
+    setCreateHelpRequestForm(prev => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateItem = (index, field, value) => {
+    setCreateHelpRequestForm(prev => ({
+      ...prev,
+      items: prev.items.map((item, i) => 
+        i === index 
+          ? { 
+              ...item, 
+              [field]: field.includes('qty') ? Number(value) : value,
+              need_qty: field === 'qty' ? Number(value) : item.need_qty
+            }
           : item
       )
     }));
@@ -482,7 +583,12 @@ const Dashboard = () => {
   const renderHelpRequestsTable = () => (
     <Card>
       <CardHeader>
-        <Heading size="md">My Help Requests</Heading>
+        <HStack justify="space-between">
+          <Heading size="md">My Help Requests</Heading>
+          <Button colorScheme="blue" onClick={() => setIsCreateHelpRequestModalOpen(true)}>
+            Create Help Request
+          </Button>
+        </HStack>
       </CardHeader>
       <CardBody>
         {userHelpRequests.length === 0 ? (
@@ -665,6 +771,117 @@ const Dashboard = () => {
               handleLogout();
             }}>
               Logout
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <Modal isOpen={isCreateHelpRequestModalOpen} onClose={() => setIsCreateHelpRequestModalOpen(false)} size="xl">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Create Help Request</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4}>
+              <FormControl isRequired>
+                <FormLabel>Title</FormLabel>
+                <Input
+                  value={createHelpRequestForm.title}
+                  onChange={(e) => setCreateHelpRequestForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Enter request title"
+                />
+              </FormControl>
+              
+              <FormControl isRequired>
+                <FormLabel>Description</FormLabel>
+                <Textarea
+                  value={createHelpRequestForm.description}
+                  onChange={(e) => setCreateHelpRequestForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Describe your request"
+                />
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel>Address</FormLabel>
+                <Input
+                  value={createHelpRequestForm.address}
+                  onChange={(e) => setCreateHelpRequestForm(prev => ({ ...prev, address: e.target.value }))}
+                  placeholder="Enter address"
+                />
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel>Priority</FormLabel>
+                <Select
+                  value={createHelpRequestForm.priority}
+                  onChange={(e) => setCreateHelpRequestForm(prev => ({ ...prev, priority: e.target.value }))}
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </Select>
+              </FormControl>
+
+              <Box w="100%">
+                <HStack justify="space-between" mb={4}>
+                  <Text fontWeight="bold">Items</Text>
+                  <Button size="sm" colorScheme="blue" onClick={addItem}>
+                    Add Item
+                  </Button>
+                </HStack>
+                
+                <VStack spacing={4} align="stretch">
+                  {createHelpRequestForm.items.map((item, index) => (
+                    <Grid key={index} templateColumns="repeat(12, 1fr)" gap={4}>
+                      <GridItem colSpan={6}>
+                        <FormControl isRequired>
+                          <FormLabel>Item Name</FormLabel>
+                          <Input
+                            value={item.name}
+                            onChange={(e) => updateItem(index, 'name', e.target.value)}
+                            placeholder="Item name"
+                          />
+                        </FormControl>
+                      </GridItem>
+                      <GridItem colSpan={4}>
+                        <FormControl isRequired>
+                          <FormLabel>Quantity</FormLabel>
+                          <NumberInput
+                            min={0}
+                            value={item.qty}
+                            onChange={(value) => updateItem(index, 'qty', value)}
+                          >
+                            <NumberInputField />
+                            <NumberInputStepper>
+                              <NumberIncrementStepper />
+                              <NumberDecrementStepper />
+                            </NumberInputStepper>
+                          </NumberInput>
+                        </FormControl>
+                      </GridItem>
+                      <GridItem colSpan={2} display="flex" alignItems="flex-end">
+                        {index > 0 && (
+                          <Button size="sm" colorScheme="red" onClick={() => removeItem(index)}>
+                            Remove
+                          </Button>
+                        )}
+                      </GridItem>
+                    </Grid>
+                  ))}
+                </VStack>
+              </Box>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={() => setIsCreateHelpRequestModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              colorScheme="blue"
+              onClick={handleCreateHelpRequest}
+              isLoading={isSubmitting}
+            >
+              Create Request
             </Button>
           </ModalFooter>
         </ModalContent>
