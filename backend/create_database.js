@@ -145,6 +145,32 @@ const initializeDatabase = async () => {
         await runQuery('CREATE INDEX IF NOT EXISTS idx_api_logs_timestamp ON api_logs(timestamp)');
         console.log('Indexes created');
 
+        // Create default users (admin, moderator, user)
+        db.run(`
+          INSERT OR IGNORE INTO users (name, email, phone_number, password, role, ref_id) VALUES 
+          ('Admin User', 'admin@drs.com', '+1234567890', '$2b$10$ZKqWBMhC3zGjOKxXjqnRWO2F0DLqMBbcDB7/e5BBTxZnmCJxX9.Hy', 'admin', 'admin_001'),
+          ('Moderator User', 'moderator@drs.com', '+1234567891', '$2b$10$ZKqWBMhC3zGjOKxXjqnRWO2F0DLqMBbcDB7/e5BBTxZnmCJxX9.Hy', 'moderator', 'mod_001'),
+          ('Regular User', 'user@drs.com', '+1234567892', '$2b$10$ZKqWBMhC3zGjOKxXjqnRWO2F0DLqMBbcDB7/e5BBTxZnmCJxX9.Hy', 'user', 'user_001')
+        `, (err) => {
+          if (err) {
+            console.error('Error creating default users:', err);
+          } else {
+            console.log('Default users created successfully');
+          }
+        });
+
+        // Create user_refs for default users
+        db.run(`
+          INSERT OR IGNORE INTO user_refs (user_id, ref_id) 
+          SELECT id, ref_id FROM users WHERE ref_id IN ('admin_001', 'mod_001', 'user_001')
+        `, (err) => {
+          if (err) {
+            console.error('Error creating user refs:', err);
+          } else {
+            console.log('User refs created successfully');
+          }
+        });
+
         console.log('Database schema created successfully');
         db.close(() => {
             console.log('Database connection closed');
