@@ -3,7 +3,7 @@ import {
   Box,
   Button,
   Container,
-  VStack as Stack,
+  VStack,
   HStack,
   Text,
   Heading,
@@ -23,14 +23,30 @@ import {
   IconButton,
   Grid,
   GridItem,
-  List,
-  ListItem,
   Divider,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
+  FormControl,
+  FormLabel,
+  Input,
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
+  NumberIncrementStepper,
+  NumberDecrementStepper,
+  Textarea,
+  useToast,
 } from '@chakra-ui/react';
 import { ViewIcon, ArrowBackIcon } from '@chakra-ui/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { getHelpRequests } from '../api/helpRequests';
+import Cookies from 'js-cookie';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -38,7 +54,14 @@ const Dashboard = () => {
   const [helpRequests, setHelpRequests] = useState([]);
   const [error, setError] = useState('');
   const [selectedRequest, setSelectedRequest] = useState(null);
-  const [viewMode, setViewMode] = useState('table'); // 'table' or 'card'
+  const [viewMode, setViewMode] = useState('table');
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [supportFormData, setSupportFormData] = useState({
+    notes: '',
+    items: []
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const toast = useToast();
   const navigate = useNavigate();
 
   // Color mode values
@@ -62,6 +85,26 @@ const Dashboard = () => {
     fetchHelpRequests();
   }, []);
 
+  useEffect(() => {
+    if (selectedRequest && selectedRequest.items_list) {
+      console.log('Selected Request:', selectedRequest);
+      console.log('Items List:', selectedRequest.items_list);
+      
+      setSupportFormData(prev => ({
+        ...prev,
+        items: selectedRequest.items_list
+          .filter(item => item && item.request_item_id) 
+          .map(item => ({
+            request_item_id: item.request_item_id,
+            name: item.name,
+            quantity_offered: 0,
+            notes: '',
+            max_quantity: item.need_qty - (item.received_qty || 0)
+          }))
+      }));
+    }
+  }, [selectedRequest]);
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -75,6 +118,104 @@ const Dashboard = () => {
   const handleBackToTable = () => {
     setSelectedRequest(null);
     setViewMode('table');
+  };
+
+  const handleSupportSubmit = async () => {
+    try {
+      setIsSubmitting(true);
+      
+      const validItems = supportFormData.items
+        .filter(item => item && item.request_item_id && item.quantity_offered > 0);
+      
+      console.log('Valid Items:', validItems);
+      
+      if (validItems.length === 0) {
+        throw new Error('Please offer at least one item');
+      }
+
+      const token = Cookies.get(import.meta.env.VITE_JWT_KEY);
+      if (!token) {
+        throw new Error('Authentication token not found. Please login again.');
+      }
+
+      const requestPayload = {
+        help_request_id: selectedRequest.id,
+        items: validItems.map(item => ({
+          request_item_id: parseInt(item.request_item_id),
+          quantity_offered: parseInt(item.quantity_offered),
+          notes: item.notes || ''
+        })),
+        notes: supportFormData.notes || ''
+      };
+      console.log('Support Request Payload:', requestPayload);
+
+      const response = await fetch('http://localhost:3000/api/user/support-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(requestPayload)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create support request');
+      }
+
+      const responseData = await response.json();
+      console.log('Support Request Response:', responseData);
+
+      toast({
+        title: 'Support Request Created',
+        description: 'Your support request has been submitted successfully.',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+
+      setIsSupportModalOpen(false);
+      setSupportFormData({ notes: '', items: [] });
+      
+    } catch (error) {
+      console.error('Support Request Error:', error);
+      toast({
+        title: 'Error',
+        description: error.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      
+      if (error.message.toLowerCase().includes('token')) {
+        logout();
+        navigate('/login');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleQuantityChange = (index, value) => {
+    setSupportFormData(prev => ({
+      ...prev,
+      items: prev.items.map((item, i) => 
+        i === index 
+          ? { ...item, quantity_offered: parseInt(value) || 0 }
+          : item
+      )
+    }));
+  };
+
+  const handleItemNotesChange = (index, value) => {
+    setSupportFormData(prev => ({
+      ...prev,
+      items: prev.items.map((item, i) => 
+        i === index 
+          ? { ...item, notes: value }
+          : item
+      )
+    }));
   };
 
   if (isLoading) {
@@ -151,6 +292,12 @@ const Dashboard = () => {
             Back to Table
           </Button>
           <Heading size="md" color={textColor}>Request Details</Heading>
+          <Button
+            colorScheme="green"
+            onClick={() => setIsSupportModalOpen(true)}
+          >
+            Extend Support
+          </Button>
         </HStack>
       </CardHeader>
       <CardBody>
@@ -219,6 +366,73 @@ const Dashboard = () => {
           </GridItem>
         </Grid>
       </CardBody>
+      <Modal isOpen={isSupportModalOpen} onClose={() => setIsSupportModalOpen(false)} size="xl">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Extend Support</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4}>
+              <FormControl>
+                <FormLabel>Notes</FormLabel>
+                <Textarea
+                  value={supportFormData.notes}
+                  onChange={(e) => setSupportFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Add any additional notes..."
+                />
+              </FormControl>
+              <Divider />
+              <Text fontWeight="bold" w="100%">Items</Text>
+              {supportFormData.items.map((item, index) => (
+                <Grid key={index} templateColumns="repeat(12, 1fr)" gap={4} w="100%">
+                  <GridItem colSpan={4}>
+                    <Text fontWeight="medium">{item.name}</Text>
+                  </GridItem>
+                  <GridItem colSpan={4}>
+                    <FormControl>
+                      <FormLabel>Quantity to Offer</FormLabel>
+                      <NumberInput
+                        min={0}
+                        max={item.max_quantity}
+                        value={item.quantity_offered}
+                        onChange={(value) => handleQuantityChange(index, value)}
+                      >
+                        <NumberInputField />
+                        <NumberInputStepper>
+                          <NumberIncrementStepper />
+                          <NumberDecrementStepper />
+                        </NumberInputStepper>
+                      </NumberInput>
+                    </FormControl>
+                  </GridItem>
+                  <GridItem colSpan={4}>
+                    <FormControl>
+                      <FormLabel>Item Notes</FormLabel>
+                      <Input
+                        value={item.notes}
+                        onChange={(e) => handleItemNotesChange(index, e.target.value)}
+                        placeholder="Optional notes for this item"
+                      />
+                    </FormControl>
+                  </GridItem>
+                </Grid>
+              ))}
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={() => setIsSupportModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              colorScheme="green" 
+              onClick={handleSupportSubmit}
+              isLoading={isSubmitting}
+            >
+              Submit Support
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Card>
   );
 

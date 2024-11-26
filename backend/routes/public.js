@@ -9,6 +9,7 @@ router.get('/help-requests', (req, res) => {
             hr.*,
             json_group_array(
                 json_object(
+                    'request_item_id', ri.id,
                     'name', ri.name,
                     'qty', ri.qty,
                     'received_qty', ri.received_qty,
@@ -28,7 +29,18 @@ router.get('/help-requests', (req, res) => {
         
         // Parse the JSON string of items_list for each row
         rows.forEach(row => {
-            row.items_list = JSON.parse(row.items_list);
+            if (row.items_list) {
+                try {
+                    row.items_list = JSON.parse(row.items_list);
+                    // Filter out null items that might come from LEFT JOIN
+                    row.items_list = row.items_list.filter(item => item.request_item_id !== null);
+                } catch (e) {
+                    console.error('Error parsing items_list:', e);
+                    row.items_list = [];
+                }
+            } else {
+                row.items_list = [];
+            }
         });
 
         res.json(rows);
