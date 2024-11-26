@@ -4,6 +4,8 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginForm from './components/LoginForm';
 import SignupForm from './components/SignupForm';
 import Dashboard from './components/Dashboard';
+import ModeratorDashboard from './components/ModeratorDashboard';
+import AdminDashboard from './components/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Custom theme with AMOLED dark mode default
@@ -72,6 +74,16 @@ const AuthRoute = ({ children }) => {
   return isAuthenticated ? <Navigate to="/dashboard" replace /> : children;
 };
 
+const DashboardRoute = () => {
+  const { user } = useAuth();
+  if (user?.role === 'moderator') {
+    return <ModeratorDashboard />;
+  } else if (user?.role === 'admin') {
+    return <AdminDashboard />;
+  }
+  return <Dashboard />;
+};
+
 const App = () => (
   <>
     <ColorModeScript initialColorMode={theme.config.initialColorMode} />
@@ -99,7 +111,7 @@ const App = () => (
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <DashboardRoute />
                 </ProtectedRoute>
               }
             />

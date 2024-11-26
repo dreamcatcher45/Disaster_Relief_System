@@ -27,6 +27,7 @@ import {
 import { FaMobileAlt, FaEnvelope, FaLock } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { login } from '../api/auth';
+import { jwtDecode } from 'jwt-decode'; // Import jwtDecode
 
 const LoginForm = () => {
   const [tabIndex, setTabIndex] = useState(0);
@@ -48,7 +49,18 @@ const LoginForm = () => {
     try {
       const role = tabIndex === 0 ? 'user' : tabIndex === 1 ? 'admin' : 'moderator';
       const response = await login({ ...formData, role });
-      authLogin(response);
+      
+      // Decode the JWT token to get user information
+      const decodedToken = jwtDecode(response.token);
+      const userData = {
+        ...decodedToken,
+        role: role,
+        email: formData.email
+      };
+      
+      // Pass both token and user data to auth context
+      authLogin({ token: response.token, user: userData });
+      
       navigate('/dashboard');
       toast({
         title: 'Login successful',
