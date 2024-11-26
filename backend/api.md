@@ -197,9 +197,44 @@ curl -X POST http://localhost:3000/api/privilege/support-requests/1/review \
   -H "Authorization: Bearer <token>" \
   -d '{
     "action": "accept",
-    "notes": "Approved after verification"
+    "notes": "Approved after verification",
+    "items": [
+      {
+        "request_item_id": 1,
+        "quantity_offered": 5
+      }
+    ]
   }'
 ```
+Response:
+```json
+{
+  "success": true,
+  "message": "Support request reviewed successfully",
+  "data": {
+    "id": 1,
+    "status": "accepted",
+    "notes": "Approved after verification",
+    "help_request_status": "active",  // Will be "completed" if all item needs are met
+    "items": [
+      {
+        "id": 1,
+        "name": "First Aid Kit",
+        "quantity_offered": 5,
+        "quantity_needed": 5,  // Reduced by quantity_offered
+        "quantity_received": 5  // Increased by quantity_offered
+      }
+    ]
+  }
+}
+```
+
+Notes:
+- When a support request is approved:
+  1. The `received_qty` of each item is increased by the `quantity_offered`
+  2. The `need_qty` of each item is decreased by the `quantity_offered`
+  3. If all items in the help request have `need_qty = 0`, the help request status is automatically updated to "completed"
+- No quantity changes occur if the request is rejected
 
 ### Update Logistics Status (Moderator/Admin)
 ```bash

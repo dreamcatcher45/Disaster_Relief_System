@@ -256,17 +256,24 @@ const SupportRequestTable = () => {
                     <Text fontWeight="bold">Items</Text>
                     <VStack align="stretch" mt={2}>
                       {selectedRequest.items.map((item, index) => (
-                        <HStack key={index} justify="space-between">
-                          <Text>{item.name}</Text>
-                          <Text>Qty: {item.qty}</Text>
-                        </HStack>
+                        <Box key={index} p={2} borderWidth="1px" borderRadius="md">
+                          <HStack justify="space-between">
+                            <Text>{item.name}</Text>
+                            <Text>Quantity Offered: {item.quantity_offered}</Text>
+                          </HStack>
+                          {item.notes && (
+                            <Text fontSize="sm" mt={1} color="gray.600">
+                              Notes: {item.notes}
+                            </Text>
+                          )}
+                        </Box>
                       ))}
                     </VStack>
                   </Box>
                 )}
                 <Divider />
                 <Box>
-                  <Text fontWeight="bold" mb={2}>Notes</Text>
+                  <Text fontWeight="bold" mb={2}>Review Notes</Text>
                   <Textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}

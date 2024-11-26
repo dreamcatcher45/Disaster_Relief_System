@@ -187,8 +187,39 @@ router.post('/support-requests/:id/review', verifyToken, checkRole(['moderator',
                 for (const item of items) {
                     await new Promise((resolve, reject) => {
                         db.run(
-                            'UPDATE request_items SET received_qty = received_qty + ? WHERE id = ?',
-                            [item.quantity_offered, item.request_item_id],
+                            `UPDATE request_items 
+                             SET received_qty = received_qty + ?,
+                                 need_qty = need_qty - ?
+                             WHERE id = ?`,
+                            [item.quantity_offered, item.quantity_offered, item.request_item_id],
+                            err => {
+                                if (err) reject(err);
+                                resolve();
+                            }
+                        );
+                    });
+                }
+
+                // Check if all items have need_qty = 0
+                const remainingNeeds = await new Promise((resolve, reject) => {
+                    db.get(
+                        `SELECT COUNT(*) as count
+                         FROM request_items
+                         WHERE help_request_id = ? AND need_qty > 0`,
+                        [supportRequest.help_request_id],
+                        (err, row) => {
+                            if (err) reject(err);
+                            resolve(row);
+                        }
+                    );
+                });
+
+                // If all needs are met, update help request status to completed
+                if (remainingNeeds.count === 0) {
+                    await new Promise((resolve, reject) => {
+                        db.run(
+                            'UPDATE help_requests SET status = ? WHERE id = ?',
+                            ['completed', supportRequest.help_request_id],
                             err => {
                                 if (err) reject(err);
                                 resolve();
