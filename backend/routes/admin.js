@@ -324,7 +324,7 @@ router.delete('/users/:ref_id', async (req, res) => {
 // Get API Logs
 router.get('/logs', async (req, res) => {
     try {
-        const { start_date, end_date, user_ref_id, action, method } = req.query;
+        const { start_date, end_date, method } = req.query;
         let query = `
             SELECT l.*, u.name as user_name, u.role as user_role
             FROM api_logs l
@@ -342,16 +342,6 @@ router.get('/logs', async (req, res) => {
         if (end_date) {
             query += ' AND l.timestamp <= ?';
             params.push(end_date);
-        }
-
-        if (user_ref_id) {
-            query += ' AND l.user_ref_id = ?';
-            params.push(user_ref_id);
-        }
-
-        if (action) {
-            query += ' AND l.action = ?';
-            params.push(action);
         }
 
         if (method) {

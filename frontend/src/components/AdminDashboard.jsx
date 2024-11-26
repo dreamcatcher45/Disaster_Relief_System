@@ -32,6 +32,7 @@ import HelpRequestTable from './HelpRequestTable';
 import SupportRequestTable from './SupportRequestTable';
 import LogisticsTable from './LogisticsTable';
 import UserManagementTable from './UserManagementTable';
+import LogsTable from './LogsTable';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -75,6 +76,7 @@ const AdminDashboard = () => {
               <Tab>Support Requests</Tab>
               <Tab>Logistics</Tab>
               <Tab>Users</Tab>
+              <Tab>Logs</Tab>
             </TabList>
 
             <TabPanels>
@@ -89,6 +91,9 @@ const AdminDashboard = () => {
               </TabPanel>
               <TabPanel>
                 <UserManagementTable />
+              </TabPanel>
+              <TabPanel>
+                <LogsTable />
               </TabPanel>
             </TabPanels>
           </Tabs>
