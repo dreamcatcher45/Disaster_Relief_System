@@ -89,11 +89,30 @@ curl -X GET http://localhost:3000/api/admin/users?role=moderator \
   -H "Authorization: Bearer <admin_token>"
 ```
 
+### Get All Users (Admin Only)
+```bash
+curl -X GET http://localhost:3000/api/admin/users \
+  -H "Authorization: Bearer <admin_token>"
+```
+Query parameters:
+- `role`: Filter users by role (optional, values: 'user', 'moderator', 'admin')
+
 ### Delete User (Admin Only)
 ```bash
 curl -X DELETE http://localhost:3000/api/admin/users/1a2b3c4d \
   -H "Authorization: Bearer <admin_token>"
 ```
+
+### Update User Role (Admin Only)
+```bash
+curl -X PUT http://localhost:3000/api/admin/users/<ref_id>/role \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <admin_token>" \
+  -d '{
+    "new_role": "moderator"
+  }'
+```
+Note: Cannot modify admin roles or change own role.
 
 ### Change User Role (Admin Only)
 ```bash
@@ -181,6 +200,15 @@ curl -X GET http://localhost:3000/api/user/support-requests \
   -H "Authorization: Bearer <token>"
 ```
 
+### Get Support Requests (Moderator/Admin)
+```bash
+curl -X GET http://localhost:3000/api/privilege/support-requests \
+  -H "Authorization: Bearer <token>"
+```
+Query parameters:
+- `status`: Filter by status (optional)
+- `help_request_id`: Filter by help request ID (optional)
+
 ### List Support Requests (Moderator/Admin)
 ```bash
 curl -X GET http://localhost:3000/api/privilege/support-requests \
@@ -189,6 +217,18 @@ curl -X GET http://localhost:3000/api/privilege/support-requests \
   -d status=pending \
   -d help_request_id=1
 ```
+
+### Review Support Request (Moderator/Admin)
+```bash
+curl -X POST http://localhost:3000/api/privilege/support-requests/<id>/review \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{
+    "action": "accept",
+    "notes": "Support request accepted"
+  }'
+```
+Action values: 'accept' or 'reject'
 
 ### Review Support Request (Moderator/Admin)
 ```bash
@@ -238,7 +278,7 @@ Notes:
 
 ### Update Logistics Status (Moderator/Admin)
 ```bash
-curl -X POST http://localhost:3000/api/privilege/logistics/1/status \
+curl -X POST http://localhost:3000/api/privilege/logistics/<id>/status \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token>" \
   -d '{
@@ -247,16 +287,31 @@ curl -X POST http://localhost:3000/api/privilege/logistics/1/status \
   }'
 ```
 
-### View Logistics History (Moderator/Admin)
+### Update Logistics Status (Moderator/Admin)
+```bash
+curl -X POST http://localhost:3000/api/privilege/logistics/1/status \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{
+    "new_status": "received",
+    "notes": "Items received at warehouse"
+  }'
+```
+Valid status transitions:
+- 'accepted' → 'received'
+- 'received' → 'delivered'
+- 'delivered' → 'completed'
+
+### Get Logistics History (Moderator/Admin)
 ```bash
 curl -X GET http://localhost:3000/api/privilege/logistics/history \
-  -H "Authorization: Bearer <token>" \
-  -G \
-  -d support_request_id=1 \
-  -d status=received \
-  -d start_date="2024-01-01" \
-  -d end_date="2024-12-31"
+  -H "Authorization: Bearer <token>"
 ```
+Query parameters:
+- `support_request_id`: Filter by support request ID (optional)
+- `status`: Filter by status (optional)
+- `start_date`: Filter by start date (optional)
+- `end_date`: Filter by end date (optional)
 
 ## API Logging
 All API requests are automatically logged with the following information:
@@ -267,6 +322,36 @@ All API requests are automatically logged with the following information:
 - Response status
 - Timestamp
 - Client information (IP, User Agent)
+
+## Admin APIs
+
+### View API Logs (Admin Only)
+```bash
+curl -X GET http://localhost:3000/api/admin/logs \
+  -H "Authorization: Bearer <admin_token>" \
+  -G \
+  -d start_date="2024-01-01" \
+  -d end_date="2024-12-31" \
+  -d user_ref_id="1a2b3c4d" \
+  -d action="login" \
+  -d method="POST"
+```
+
+Query parameters (all optional):
+- `start_date`: Filter logs from this date
+- `end_date`: Filter logs until this date
+- `user_ref_id`: Filter by specific user
+- `action`: Filter by action type
+- `method`: Filter by HTTP method
+
+Response includes:
+- User information (name, role)
+- Action performed
+- API endpoint details
+- Request/response information
+- Timestamp
+
+Note: Results are limited to 100 most recent entries
 
 ## Notes
 1. Each user gets a unique 8-digit hex reference ID upon registration

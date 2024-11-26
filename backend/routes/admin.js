@@ -235,4 +235,61 @@ router.put('/users/:ref_id/role', async (req, res) => {
     }
 });
 
+// Get API Logs
+router.get('/logs', async (req, res) => {
+    try {
+        const { start_date, end_date, user_ref_id, action, method } = req.query;
+        let query = `
+            SELECT l.*, u.name as user_name, u.role as user_role
+            FROM api_logs l
+            LEFT JOIN user_refs ur ON ur.ref_id = l.user_ref_id
+            LEFT JOIN users u ON u.id = ur.user_id
+            WHERE 1=1
+        `;
+        const params = [];
+
+        if (start_date) {
+            query += ' AND l.timestamp >= ?';
+            params.push(start_date);
+        }
+
+        if (end_date) {
+            query += ' AND l.timestamp <= ?';
+            params.push(end_date);
+        }
+
+        if (user_ref_id) {
+            query += ' AND l.user_ref_id = ?';
+            params.push(user_ref_id);
+        }
+
+        if (action) {
+            query += ' AND l.action = ?';
+            params.push(action);
+        }
+
+        if (method) {
+            query += ' AND l.method = ?';
+            params.push(method);
+        }
+
+        query += ' ORDER BY l.timestamp DESC LIMIT 100';
+
+        const logs = await new Promise((resolve, reject) => {
+            req.db.all(query, params, (err, rows) => {
+                if (err) reject(err);
+                resolve(rows);
+            });
+        });
+
+        res.json({
+            message: 'Logs retrieved successfully',
+            data: logs
+        });
+    } catch (error) {
+        console.error('Error retrieving logs:', error);
+        res.status(500).json({ message: 'Error retrieving logs' });
+    }
+});
+
 module.exports = router;

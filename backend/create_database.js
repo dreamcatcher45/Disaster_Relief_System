@@ -61,8 +61,6 @@ const initializeDatabase = async () => {
             request_body TEXT,
             response_status INTEGER,
             response_body TEXT,
-            ip_address TEXT,
-            user_agent TEXT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(user_ref_id) REFERENCES user_refs(ref_id)
         )`);
