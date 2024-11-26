@@ -28,6 +28,8 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import HelpRequestTable from './HelpRequestTable';
+import SupportRequestTable from './SupportRequestTable';
+import LogisticsTable from './LogisticsTable';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -65,14 +67,20 @@ const AdminDashboard = () => {
         <Tabs defaultIndex={0} isLazy>
           <TabList>
             <Tab>Help Requests</Tab>
-            {/* Add more tabs here as needed */}
+            <Tab>Support Requests</Tab>
+            <Tab>Logistics</Tab>
           </TabList>
 
           <TabPanels>
             <TabPanel>
               <HelpRequestTable />
             </TabPanel>
-            {/* Add more TabPanels here as needed */}
+            <TabPanel>
+              <SupportRequestTable />
+            </TabPanel>
+            <TabPanel>
+              <LogisticsTable />
+            </TabPanel>
           </TabPanels>
         </Tabs>
 

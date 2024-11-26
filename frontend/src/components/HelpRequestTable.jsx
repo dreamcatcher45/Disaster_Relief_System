@@ -114,70 +114,72 @@ const HelpRequestTable = () => {
 
   return (
     <>
-      <TableContainer>
-        <Table variant="simple">
-          <Thead>
-            <Tr>
-              <Th>ID</Th>
-              <Th>User</Th>
-              <Th>Description</Th>
-              <Th>Status</Th>
-              <Th>Created At</Th>
-              <Th>Actions</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {helpRequests.map((request) => (
-              <Tr key={request.id}>
-                <Td>{request.id}</Td>
-                <Td>{request.user_email}</Td>
-                <Td>{request.description}</Td>
-                <Td>
-                  <Badge
-                    colorScheme={
-                      request.status === 'pending' ? 'yellow' :
-                      request.status === 'in_progress' ? 'blue' :
-                      request.status === 'resolved' ? 'green' : 'gray'
-                    }
-                  >
-                    {request.status.replace('_', ' ').toUpperCase()}
-                  </Badge>
-                </Td>
-                <Td>{new Date(request.created_at).toLocaleString()}</Td>
-                <Td>
-                  <HStack spacing={2}>
-                    <IconButton
-                      icon={<ViewIcon />}
-                      colorScheme="blue"
-                      variant="ghost"
-                      aria-label="View details"
-                      onClick={() => handleViewRequest(request)}
-                    />
-                    {request.status === 'pending' && (
-                      <Button
-                        size="sm"
-                        colorScheme="blue"
-                        onClick={() => handleStatusUpdate(request.id, 'in_progress')}
-                      >
-                        Start
-                      </Button>
-                    )}
-                    {request.status === 'in_progress' && (
-                      <Button
-                        size="sm"
-                        colorScheme="green"
-                        onClick={() => handleStatusUpdate(request.id, 'resolved')}
-                      >
-                        Resolve
-                      </Button>
-                    )}
-                  </HStack>
-                </Td>
+      <Box overflowX="auto" bg={useColorModeValue('white', 'gray.800')} borderRadius="lg" borderWidth="1px" borderColor={borderColor}>
+        <TableContainer>
+          <Table variant="simple">
+            <Thead>
+              <Tr>
+                <Th>ID</Th>
+                <Th>User</Th>
+                <Th>Description</Th>
+                <Th>Status</Th>
+                <Th>Created At</Th>
+                <Th>Actions</Th>
               </Tr>
-            ))}
-          </Tbody>
-        </Table>
-      </TableContainer>
+            </Thead>
+            <Tbody>
+              {helpRequests.map((request) => (
+                <Tr key={request.id}>
+                  <Td>{request.id}</Td>
+                  <Td>{request.user_email}</Td>
+                  <Td>{request.description}</Td>
+                  <Td>
+                    <Badge
+                      colorScheme={
+                        request.status === 'pending' ? 'yellow' :
+                        request.status === 'in_progress' ? 'blue' :
+                        request.status === 'resolved' ? 'green' : 'gray'
+                      }
+                    >
+                      {request.status.replace('_', ' ').toUpperCase()}
+                    </Badge>
+                  </Td>
+                  <Td>{new Date(request.created_at).toLocaleString()}</Td>
+                  <Td>
+                    <HStack spacing={2}>
+                      <IconButton
+                        icon={<ViewIcon />}
+                        colorScheme="blue"
+                        variant="ghost"
+                        aria-label="View details"
+                        onClick={() => handleViewRequest(request)}
+                      />
+                      {request.status === 'pending' && (
+                        <Button
+                          size="sm"
+                          colorScheme="blue"
+                          onClick={() => handleStatusUpdate(request.id, 'in_progress')}
+                        >
+                          Start
+                        </Button>
+                      )}
+                      {request.status === 'in_progress' && (
+                        <Button
+                          size="sm"
+                          colorScheme="green"
+                          onClick={() => handleStatusUpdate(request.id, 'resolved')}
+                        >
+                          Resolve
+                        </Button>
+                      )}
+                    </HStack>
+                  </Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        </TableContainer>
+      </Box>
 
       {/* Details Modal */}
       <Modal isOpen={isDetailsModalOpen} onClose={() => setIsDetailsModalOpen(false)} size="xl">
