@@ -235,6 +235,92 @@ router.put('/users/:ref_id/role', async (req, res) => {
     }
 });
 
+// Delete user
+router.delete('/users/:ref_id', async (req, res) => {
+    try {
+        const { ref_id } = req.params;
+
+        // Don't allow deleting own account
+        if (ref_id === req.user.ref_id) {
+            return res.status(400).json({ message: 'Cannot delete your own account' });
+        }
+
+        // Get user details
+        const user = await getUserByRefId(ref_id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Don't allow deleting other admins
+        if (user.role === 'admin') {
+            return res.status(403).json({ message: 'Cannot delete admin accounts' });
+        }
+
+        // Start transaction
+        await new Promise((resolve, reject) => {
+            req.db.run('BEGIN TRANSACTION', err => {
+                if (err) reject(err);
+                resolve();
+            });
+        });
+
+        try {
+            // Delete from user_refs
+            await new Promise((resolve, reject) => {
+                req.db.run(
+                    'DELETE FROM user_refs WHERE ref_id = ?',
+                    [ref_id],
+                    err => {
+                        if (err) reject(err);
+                        resolve();
+                    }
+                );
+            });
+
+            // Delete from users
+            await new Promise((resolve, reject) => {
+                req.db.run(
+                    'DELETE FROM users WHERE id = ?',
+                    [user.id],
+                    err => {
+                        if (err) reject(err);
+                        resolve();
+                    }
+                );
+            });
+
+            // Commit transaction
+            await new Promise((resolve, reject) => {
+                req.db.run('COMMIT', err => {
+                    if (err) reject(err);
+                    resolve();
+                });
+            });
+
+            res.json({
+                message: 'User deleted successfully',
+                data: {
+                    ref_id,
+                    name: user.name,
+                    role: user.role
+                }
+            });
+        } catch (error) {
+            // Rollback on error
+            await new Promise((resolve, reject) => {
+                req.db.run('ROLLBACK', err => {
+                    if (err) reject(err);
+                    resolve();
+                });
+            });
+            throw error;
+        }
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        res.status(500).json({ message: 'Error deleting user' });
+    }
+});
+
 // Get API Logs
 router.get('/logs', async (req, res) => {
     try {

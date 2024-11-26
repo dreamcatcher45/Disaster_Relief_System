@@ -46,11 +46,28 @@ A Node.js backend service for managing disaster relief operations, coordinating 
 - `GET /privilege/logistics/history`: Track logistics changes
 
 ### Admin APIs
+
+The following endpoints are only accessible to users with the admin role:
+
+1. **User Management**
+   - `POST /api/admin/create-moderator` - Create a new moderator account
+   - `GET /api/admin/users` - List all users (with optional role filter)
+   - `PUT /api/admin/users/:ref_id/role` - Update a user's role
+   - `DELETE /api/admin/users/:ref_id` - Delete a user (cannot delete admins or self)
+
+2. **System Monitoring**
+   - `GET /api/admin/logs` - View system API logs with filtering options
+     - Filter by date range, user, action, and method
+     - Limited to 100 most recent entries
+
+### Available Endpoints
+
 - `POST /admin/register`: First admin setup
 - `POST /admin/login`: Admin authentication
 - `GET /admin/users`: User management
 - `PUT /admin/users/:ref_id/role`: Role management
 - `POST /admin/create-moderator`: Moderator creation
+- `DELETE /admin/users/:ref_id`: Delete a user (cannot delete admins or self)
 - `GET /admin/logs`: View system activity logs
 
 ## Setup

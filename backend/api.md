@@ -98,10 +98,30 @@ Query parameters:
 - `role`: Filter users by role (optional, values: 'user', 'moderator', 'admin')
 
 ### Delete User (Admin Only)
-```bash
-curl -X DELETE http://localhost:3000/api/admin/users/1a2b3c4d \
-  -H "Authorization: Bearer <admin_token>"
+**DELETE** `/api/admin/users/:ref_id`
+
+Delete a user from the system. Cannot delete admin accounts or your own account.
+
+**Parameters:**
+- `ref_id` (path parameter) - Reference ID of the user to delete
+
+**Response:**
+```json
+{
+    "message": "User deleted successfully",
+    "data": {
+        "ref_id": "string",
+        "name": "string",
+        "role": "string"
+    }
+}
 ```
+
+**Error Responses:**
+- `400` - Cannot delete your own account
+- `403` - Cannot delete admin accounts
+- `404` - User not found
+- `500` - Server error
 
 ### Update User Role (Admin Only)
 ```bash

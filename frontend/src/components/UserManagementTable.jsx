@@ -47,6 +47,8 @@ const UserManagementTable = () => {
   const [formErrors, setFormErrors] = useState({});
   const [newRole, setNewRole] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
 
   const toast = useToast();
 
@@ -226,6 +228,43 @@ const UserManagementTable = () => {
     }
   };
 
+  const handleDeleteUser = async () => {
+    try {
+      const token = Cookies.get(import.meta.env.VITE_JWT_KEY);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/admin/users/${userToDelete.ref_id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete user');
+      }
+
+      toast({
+        title: 'Success',
+        description: 'User deleted successfully',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
+      fetchUsers();
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: err.message,
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
   const closeModeratorModal = () => {
     setIsCreateModeratorModalOpen(false);
     setModeratorForm({
@@ -303,17 +342,29 @@ const UserManagementTable = () => {
                     </Badge>
                   </Td>
                   <Td>
-                    <Button
-                      size="sm"
-                      colorScheme="purple"
-                      onClick={() => {
-                        setSelectedUser(user);
-                        setNewRole(user.role);
-                        setIsChangeRoleModalOpen(true);
-                      }}
-                    >
-                      Change Role
-                    </Button>
+                    <HStack spacing={2}>
+                      <Button
+                        size="sm"
+                        colorScheme="blue"
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setNewRole(user.role);
+                          setIsChangeRoleModalOpen(true);
+                        }}
+                      >
+                        Change Role
+                      </Button>
+                      <Button
+                        size="sm"
+                        colorScheme="red"
+                        onClick={() => {
+                          setUserToDelete(user);
+                          setIsDeleteModalOpen(true);
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </HStack>
                   </Td>
                 </Tr>
               ))}
@@ -430,6 +481,28 @@ const UserManagementTable = () => {
             </Button>
             <Button colorScheme="blue" onClick={handleChangeRole}>
               Update Role
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Delete User Confirmation Modal */}
+      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Confirm Delete User</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Text>
+              Are you sure you want to delete user "{userToDelete?.name}"? This action cannot be undone.
+            </Text>
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="gray" mr={3} onClick={() => setIsDeleteModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button colorScheme="red" onClick={handleDeleteUser} isLoading={loading}>
+              Delete User
             </Button>
           </ModalFooter>
         </ModalContent>
