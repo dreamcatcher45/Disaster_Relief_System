@@ -67,7 +67,7 @@ const HelpRequestTable = () => {
   const fetchHelpRequests = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:3000/api/public/help-requests');
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/public/help-requests`);
       setHelpRequests(response.data);
       setError(null);
     } catch (err) {
@@ -86,7 +86,7 @@ const HelpRequestTable = () => {
 
   const handleStatusUpdate = async (requestId, newStatus) => {
     try {
-      await axios.patch(`http://localhost:3000/api/help-requests/${requestId}`, {
+      await axios.patch(`${import.meta.env.VITE_API_URL}/help-requests/${requestId}`, {
         status: newStatus
       });
       

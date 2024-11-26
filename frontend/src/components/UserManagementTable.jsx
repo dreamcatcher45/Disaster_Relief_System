@@ -64,7 +64,7 @@ const UserManagementTable = () => {
       setLoading(true);
       const token = Cookies.get(import.meta.env.VITE_JWT_KEY);
       
-      let url = 'http://localhost:3000/api/admin/users';
+      let url = `${import.meta.env.VITE_API_URL}/admin/users`;
       if (roleFilter !== 'all') {
         url += `?role=${roleFilter}`;
       }
@@ -143,7 +143,7 @@ const UserManagementTable = () => {
 
     try {
       const token = Cookies.get(import.meta.env.VITE_JWT_KEY);
-      const response = await fetch('http://localhost:3000/api/admin/create-moderator', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/admin/create-moderator`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -189,7 +189,7 @@ const UserManagementTable = () => {
   const handleChangeRole = async () => {
     try {
       const token = Cookies.get(import.meta.env.VITE_JWT_KEY);
-      const response = await fetch(`http://localhost:3000/api/admin/users/${selectedUser.ref_id}/role`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/admin/users/${selectedUser.ref_id}/role`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
