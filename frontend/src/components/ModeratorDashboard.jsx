@@ -18,10 +18,17 @@ import {
   ModalBody,
   ModalCloseButton,
   Text,
-  Divider
+  Divider,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel
 } from '@chakra-ui/react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import HelpRequestTable from './HelpRequestTable';
+import SupportRequestTable from './SupportRequestTable';
 
 const ModeratorDashboard = () => {
   const { user, logout } = useAuth();
@@ -56,7 +63,21 @@ const ModeratorDashboard = () => {
         </HStack>
         <Divider />
 
-        {/* Add your moderator dashboard content here */}
+        <Tabs defaultIndex={0} isLazy>
+          <TabList>
+            <Tab>Help Requests</Tab>
+            <Tab>Support Requests</Tab>
+          </TabList>
+
+          <TabPanels>
+            <TabPanel>
+              <HelpRequestTable />
+            </TabPanel>
+            <TabPanel>
+              <SupportRequestTable />
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
 
         {/* Logout Confirmation Modal */}
         <Modal isOpen={isOpen} onClose={onClose}>

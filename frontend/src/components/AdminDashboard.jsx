@@ -18,10 +18,16 @@ import {
   ModalBody,
   ModalCloseButton,
   Text,
-  Divider
+  Divider,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel
 } from '@chakra-ui/react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import HelpRequestTable from './HelpRequestTable';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -56,7 +62,19 @@ const AdminDashboard = () => {
         </HStack>
         <Divider />
 
-        {/* Add your admin dashboard content here */}
+        <Tabs defaultIndex={0} isLazy>
+          <TabList>
+            <Tab>Help Requests</Tab>
+            {/* Add more tabs here as needed */}
+          </TabList>
+
+          <TabPanels>
+            <TabPanel>
+              <HelpRequestTable />
+            </TabPanel>
+            {/* Add more TabPanels here as needed */}
+          </TabPanels>
+        </Tabs>
 
         {/* Logout Confirmation Modal */}
         <Modal isOpen={isOpen} onClose={onClose}>
