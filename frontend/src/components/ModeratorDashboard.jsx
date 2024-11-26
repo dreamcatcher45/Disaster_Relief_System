@@ -29,6 +29,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import HelpRequestTable from './HelpRequestTable';
 import SupportRequestTable from './SupportRequestTable';
+import LogisticsTable from './LogisticsTable';
 
 const ModeratorDashboard = () => {
   const { user, logout } = useAuth();
@@ -67,6 +68,7 @@ const ModeratorDashboard = () => {
           <TabList>
             <Tab>Help Requests</Tab>
             <Tab>Support Requests</Tab>
+            <Tab>Logistics</Tab>
           </TabList>
 
           <TabPanels>
@@ -75,6 +77,9 @@ const ModeratorDashboard = () => {
             </TabPanel>
             <TabPanel>
               <SupportRequestTable />
+            </TabPanel>
+            <TabPanel>
+              <LogisticsTable />
             </TabPanel>
           </TabPanels>
         </Tabs>
