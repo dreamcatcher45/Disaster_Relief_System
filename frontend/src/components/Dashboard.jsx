@@ -56,6 +56,7 @@ const Dashboard = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [viewMode, setViewMode] = useState('table');
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [supportFormData, setSupportFormData] = useState({
     notes: '',
     items: []
@@ -108,6 +109,10 @@ const Dashboard = () => {
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const onLogoutClick = () => {
+    setIsLogoutModalOpen(true);
   };
 
   const handleViewRequest = (request) => {
@@ -451,10 +456,11 @@ const Dashboard = () => {
                 {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}
               </Badge>
             </Box>
-            <Button colorScheme="red" onClick={handleLogout}>
+            <Button colorScheme="red" onClick={onLogoutClick}>
               Logout
             </Button>
           </HStack>
+          <Divider my={4} borderColor="gray.600" />
         </CardHeader>
         <CardBody>
           {error && (
@@ -465,6 +471,29 @@ const Dashboard = () => {
           {viewMode === 'table' ? renderTableView() : renderCardView()}
         </CardBody>
       </Card>
+
+      {/* Logout Confirmation Modal */}
+      <Modal isOpen={isLogoutModalOpen} onClose={() => setIsLogoutModalOpen(false)}>
+        <ModalOverlay />
+        <ModalContent bg="gray.800">
+          <ModalHeader>Confirm Logout</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            Are you sure you want to logout?
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="gray" mr={3} onClick={() => setIsLogoutModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button colorScheme="red" onClick={() => {
+              setIsLogoutModalOpen(false);
+              handleLogout();
+            }}>
+              Logout
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Container>
   );
 };
