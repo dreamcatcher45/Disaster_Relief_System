@@ -2,10 +2,12 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const sqlite3 = require('sqlite3').verbose();
 const { verifyToken, checkRole, JWT_SECRET, JWT_EXPIRATION } = require('../middleware/auth');
 const { createUser, getRefIdByUserId, getUserByRefId } = require('../utils/db_utils');
+const db = new sqlite3.Database('./disaster_relief.db');
 
-// Register first admin
+// Admin registration (first admin only)
 router.post('/register', async (req, res) => {
     try {
         const { name, email, phone_number, address, password } = req.body;
@@ -102,10 +104,22 @@ router.post('/create-moderator', async (req, res) => {
     try {
         const { name, email, phone_number, address, password } = req.body;
 
+        // Check if email already exists
+        const emailExists = await new Promise((resolve, reject) => {
+            req.db.get('SELECT * FROM users WHERE email = ?', [email], (err, row) => {
+                if (err) reject(err);
+                resolve(row);
+            });
+        });
+
+        if (emailExists) {
+            return res.status(400).json({ message: 'Email already exists' });
+        }
+
         // Hash password
         const hashedPassword = await bcrypt.hash(password, parseInt(process.env.SALT_ROUNDS));
 
-        // Create moderator user with ref_id
+        // Create moderator user
         const userData = {
             name,
             email,
@@ -115,10 +129,19 @@ router.post('/create-moderator', async (req, res) => {
             role: 'moderator'
         };
 
-        await createUser(userData);
+        const user = await createUser(userData);
+        const ref_id = await getRefIdByUserId(user.id);
 
         res.status(201).json({
-            message: 'Moderator created successfully'
+            message: 'Moderator created successfully',
+            data: {
+                ref_id,
+                name,
+                email,
+                phone_number,
+                address,
+                role: 'moderator'
+            }
         });
     } catch (error) {
         console.error('Error creating moderator:', error);
@@ -126,7 +149,7 @@ router.post('/create-moderator', async (req, res) => {
     }
 });
 
-// List all users with optional role filter
+// Get all users (with optional role filter)
 router.get('/users', async (req, res) => {
     try {
         const { role } = req.query;
@@ -135,9 +158,9 @@ router.get('/users', async (req, res) => {
                    u.created_at
             FROM users u
             JOIN user_refs ur ON ur.user_id = u.id
-            WHERE u.role != 'admin' OR u.id = ?
+            WHERE 1=1
         `;
-        const params = [req.user.id]; // Include current admin in results
+        const params = [];
 
         if (role && ['user', 'moderator', 'admin'].includes(role)) {
             query += ' AND u.role = ?';
@@ -153,99 +176,14 @@ router.get('/users', async (req, res) => {
             });
         });
 
-        res.json({
-            message: 'Users retrieved successfully',
-            data: users
-        });
+        res.json(users);
     } catch (error) {
         console.error('Error retrieving users:', error);
         res.status(500).json({ message: 'Error retrieving users' });
     }
 });
 
-// Delete user
-router.delete('/users/:ref_id', async (req, res) => {
-    try {
-        const { ref_id } = req.params;
-        
-        // Don't allow deleting self
-        if (ref_id === req.user.ref_id) {
-            return res.status(400).json({ message: 'Cannot delete your own account' });
-        }
-
-        // Get user details
-        const user = await getUserByRefId(ref_id);
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        // Don't allow deleting other admins
-        if (user.role === 'admin') {
-            return res.status(403).json({ message: 'Cannot delete admin accounts' });
-        }
-
-        // Start transaction
-        await new Promise((resolve, reject) => {
-            req.db.run('BEGIN TRANSACTION', err => {
-                if (err) reject(err);
-                resolve();
-            });
-        });
-
-        try {
-            // Delete from user_refs first (foreign key constraint)
-            await new Promise((resolve, reject) => {
-                req.db.run(
-                    'DELETE FROM user_refs WHERE ref_id = ?',
-                    [ref_id],
-                    err => {
-                        if (err) reject(err);
-                        resolve();
-                    }
-                );
-            });
-
-            // Delete from users table
-            await new Promise((resolve, reject) => {
-                req.db.run(
-                    'DELETE FROM users WHERE id = ?',
-                    [user.id],
-                    err => {
-                        if (err) reject(err);
-                        resolve();
-                    }
-                );
-            });
-
-            // Commit transaction
-            await new Promise((resolve, reject) => {
-                req.db.run('COMMIT', err => {
-                    if (err) reject(err);
-                    resolve();
-                });
-            });
-
-            res.json({
-                message: 'User deleted successfully',
-                data: { ref_id }
-            });
-        } catch (error) {
-            // Rollback on error
-            await new Promise((resolve, reject) => {
-                req.db.run('ROLLBACK', err => {
-                    if (err) reject(err);
-                    resolve();
-                });
-            });
-            throw error;
-        }
-    } catch (error) {
-        console.error('Error deleting user:', error);
-        res.status(500).json({ message: 'Error deleting user' });
-    }
-});
-
-// Change user role
+// Update user role
 router.put('/users/:ref_id/role', async (req, res) => {
     try {
         const { ref_id } = req.params;

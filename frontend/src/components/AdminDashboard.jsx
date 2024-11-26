@@ -23,19 +23,23 @@ import {
   TabList,
   TabPanels,
   Tab,
-  TabPanel
+  TabPanel,
+  useColorModeValue
 } from '@chakra-ui/react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import HelpRequestTable from './HelpRequestTable';
 import SupportRequestTable from './SupportRequestTable';
 import LogisticsTable from './LogisticsTable';
+import UserManagementTable from './UserManagementTable';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const bgColor = useColorModeValue('gray.50', 'gray.900');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
 
   const handleLogout = () => {
     logout();
@@ -64,25 +68,31 @@ const AdminDashboard = () => {
         </HStack>
         <Divider />
 
-        <Tabs defaultIndex={0} isLazy>
-          <TabList>
-            <Tab>Help Requests</Tab>
-            <Tab>Support Requests</Tab>
-            <Tab>Logistics</Tab>
-          </TabList>
+        <Box bg={bgColor} p={4} borderRadius="lg" borderWidth="1px" borderColor={borderColor}>
+          <Tabs variant="enclosed" defaultIndex={0} isLazy>
+            <TabList>
+              <Tab>Help Requests</Tab>
+              <Tab>Support Requests</Tab>
+              <Tab>Logistics</Tab>
+              <Tab>Users</Tab>
+            </TabList>
 
-          <TabPanels>
-            <TabPanel>
-              <HelpRequestTable />
-            </TabPanel>
-            <TabPanel>
-              <SupportRequestTable />
-            </TabPanel>
-            <TabPanel>
-              <LogisticsTable />
-            </TabPanel>
-          </TabPanels>
-        </Tabs>
+            <TabPanels>
+              <TabPanel>
+                <HelpRequestTable />
+              </TabPanel>
+              <TabPanel>
+                <SupportRequestTable />
+              </TabPanel>
+              <TabPanel>
+                <LogisticsTable />
+              </TabPanel>
+              <TabPanel>
+                <UserManagementTable />
+              </TabPanel>
+            </TabPanels>
+          </Tabs>
+        </Box>
 
         {/* Logout Confirmation Modal */}
         <Modal isOpen={isOpen} onClose={onClose}>
