@@ -60,22 +60,10 @@ The system comes with three pre-configured users for testing purposes:
 ### Admin User
 - Email: admin@drs.com
 - Phone: +1234567890
-- Password: password123
+- Password: Admin@123
 - Role: Admin
 
-### Moderator User
-- Email: moderator@drs.com
-- Phone: +1234567891
-- Password: password123
-- Role: Moderator
-
-### Regular User
-- Email: user@drs.com
-- Phone: +1234567892
-- Password: password123
-- Role: User
-
-You can use either email or phone number to log in. All users share the same password: `password123`
+> You can create user using the signup form and moderatror using the create moderator form in the admin dashboard
 
 
 ## Setup
