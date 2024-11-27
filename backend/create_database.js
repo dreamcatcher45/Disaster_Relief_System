@@ -145,6 +145,19 @@ const initializeDatabase = async () => {
         await runQuery('CREATE INDEX IF NOT EXISTS idx_api_logs_timestamp ON api_logs(timestamp)');
         console.log('Indexes created');
 
+        // Insert admin credentials
+        const adminPassword = await bcrypt.hash('Admin@123', 10);
+        await runQuery(`INSERT OR IGNORE INTO user_refs (ref_id) VALUES ('7dadaeb9')`);
+        
+        await runQuery(`INSERT OR IGNORE INTO users (name, email, phone_number, address, password, role) 
+            VALUES ('Admin User', 'admin@drs.com', '+1234567890', 'DRS Headquarters', '${adminPassword}', 'admin')`);
+        
+        await runQuery(`UPDATE user_refs 
+            SET user_id = (SELECT id FROM users WHERE email = 'admin@drs.com') 
+            WHERE ref_id = '7dadaeb9'`);
+
+        console.log('Admin credentials inserted');
+
         console.log('Database schema created successfully');
         db.close(() => {
             console.log('Database connection closed');
