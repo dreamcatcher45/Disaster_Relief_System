@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DB_PATH=./disaster_relief.db
+      - SALT_ROUNDS=10
+      - JWT_SECRET=your-secure-jwt-secret
+    volumes:
+      - ./backend/disaster_relief.db:/app/disaster_relief.db
+    networks:
+      - drs_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:80"
+    environment:
+      - VITE_API_URL=http://localhost:3000/api
+      - VITE_JWT_KEY=drs_token
+    depends_on:
+      - backend
+    networks:
+      - drs_network
+
+networks:
+  drs_network:
+    driver: bridge
