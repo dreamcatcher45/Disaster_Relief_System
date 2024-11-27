@@ -107,7 +107,7 @@ const Dashboard = () => {
         }
 
         // Fetch help requests
-        const helpResponse = await fetch('${import.meta.env.VITE_API_URL}/user/help-requests', {
+        const helpResponse = await fetch(`${import.meta.env.VITE_API_URL}/user/help-requests`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -118,7 +118,7 @@ const Dashboard = () => {
         setUserHelpRequests(helpData.data);
 
         // Fetch support requests
-        const supportResponse = await fetch('${import.meta.env.VITE_API_URL}/user/support-requests', {
+        const supportResponse = await fetch(`${import.meta.env.VITE_API_URL}/user/support-requests`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -205,7 +205,7 @@ const Dashboard = () => {
       };
       console.log('Support Request Payload:', requestPayload);
 
-      const response = await fetch('${import.meta.env.VITE_API_URL}/user/support-requests', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/user/support-requests`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -283,7 +283,7 @@ const Dashboard = () => {
         throw new Error('Authentication token not found');
       }
 
-      const response = await fetch('${import.meta.env.VITE_API_URL}/privilege/help-requests', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/privilege/help-requests`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -315,7 +315,7 @@ const Dashboard = () => {
       });
       
       // Refresh help requests
-      const helpResponse = await fetch('${import.meta.env.VITE_API_URL}/user/help-requests', {
+      const helpResponse = await fetch(`${import.meta.env.VITE_API_URL}/user/help-requests`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
