@@ -10,6 +10,9 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
+# Rebuild native modules
+RUN npm rebuild sqlite3
+
 # Copy application code
 COPY . .
 

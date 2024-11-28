@@ -19,6 +19,12 @@ The application will be available at:
 - Frontend: http://localhost:3001
 - Backend API: http://localhost:3000
 
+## Admin credentials
+```
+email: admin@drs.com
+password: Admin@123
+````
+
 ## Stopping the Application
 
 ```bash
@@ -32,3 +38,4 @@ podman-compose down
 ## Database
 
 The SQLite database file is persisted using Docker volumes. The database file is located at `./backend/disaster_relief.db`.
+
