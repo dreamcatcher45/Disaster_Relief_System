@@ -54,11 +54,6 @@ A web application for managing disaster response operations.
 
 ## Getting Started
 
-### Prerequisites
-
-- Node.js (LTS version recommended)
-- npm or yarn package manager
-
 ### Installation
 
 1. Clone the repository
@@ -80,8 +75,3 @@ The application uses:
 - React Router for navigation
 - React Query for data fetching and caching
 - JWT for authentication
-
-## Environment Variables
-
-Configure the following in your `.env` file:
-- `VITE_API_URL` - Backend API URL

@@ -105,17 +105,7 @@ Delete a user from the system. Cannot delete admin accounts or your own account.
 **Parameters:**
 - `ref_id` (path parameter) - Reference ID of the user to delete
 
-**Response:**
-```json
-{
-    "message": "User deleted successfully",
-    "data": {
-        "ref_id": "string",
-        "name": "string",
-        "role": "string"
-    }
-}
-```
+
 
 **Error Responses:**
 - `400` - Cannot delete your own account
@@ -265,28 +255,6 @@ curl -X POST http://localhost:3000/api/privilege/support-requests/1/review \
       }
     ]
   }'
-```
-Response:
-```json
-{
-  "success": true,
-  "message": "Support request reviewed successfully",
-  "data": {
-    "id": 1,
-    "status": "accepted",
-    "notes": "Approved after verification",
-    "help_request_status": "active",  // Will be "completed" if all item needs are met
-    "items": [
-      {
-        "id": 1,
-        "name": "First Aid Kit",
-        "quantity_offered": 5,
-        "quantity_needed": 5,  // Reduced by quantity_offered
-        "quantity_received": 5  // Increased by quantity_offered
-      }
-    ]
-  }
-}
 ```
 
 Notes:
