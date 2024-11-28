@@ -38,3 +38,9 @@ podman-compose down
 ## Database
 
 The SQLite database file is persisted using Docker volumes. The database file is located at `./backend/disaster_relief.db`.
+
+## Video Demo
+
+[![Disaster Relief System Demo](https://github.com/dreamcatcher45/Disaster_Relief_System/blob/main/frontend/public/thumbnail.png?raw=true)](https://youtu.be/T4OnUuTBpb8)
+
+*Click the image above to watch the full video demonstration of the Disaster Relief System.*
