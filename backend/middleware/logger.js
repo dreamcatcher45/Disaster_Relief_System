@@ -8,49 +8,51 @@ const apiLogger = async (req, res, next) => {
     // Override the send function to capture the response
     res.send = function(body) {
         responseBody = body;
-        return originalSend.apply(res, arguments);
+        // Call the original send function and store its result
+        const result = originalSend.apply(res, arguments);
+        
+        // After response is sent, log the activity
+        try {
+            // Get user info from either authenticated user or decoded token
+            const userRefId = req.user?.ref_id || req.logUser?.ref_id || null;
+            const userRole = req.user?.role || req.logUser?.role || null;
+
+            console.log('[API Logger] User info:', {
+                fromUser: {
+                    ref_id: req.user?.ref_id,
+                    role: req.user?.role
+                },
+                fromLogUser: {
+                    ref_id: req.logUser?.ref_id,
+                    role: req.logUser?.role
+                },
+                final: {
+                    userRefId,
+                    userRole
+                }
+            });
+
+            logApiActivity({
+                user_ref_id: userRefId,
+                action: `${req.method} ${req.path}`,
+                jwt_token: req.headers['authorization']?.split(' ')[1],
+                role: userRole,
+                api_url: req.originalUrl,
+                method: req.method,
+                request_body: req.body,
+                response_status: res.statusCode,
+                response_body: responseBody
+            }).catch(error => {
+                console.error('[API Logger] Error logging API activity:', error);
+            });
+        } catch (error) {
+            console.error('[API Logger] Error in logging middleware:', error);
+        }
+
+        return result;
     };
 
-    // Continue with the request
     next();
-
-    try {
-        // Get user info from either authenticated user or decoded token
-        const userRefId = req.user?.ref_id || req.logUser?.ref_id || null;
-        const userRole = req.user?.role || req.logUser?.role || null;
-
-        console.log('[API Logger] User info:', {
-            fromUser: {
-                ref_id: req.user?.ref_id,
-                role: req.user?.role
-            },
-            fromLogUser: {
-                ref_id: req.logUser?.ref_id,
-                role: req.logUser?.role
-            },
-            final: {
-                userRefId,
-                userRole
-            }
-        });
-
-        // After response is sent, log the activity
-        await logApiActivity({
-            user_ref_id: userRefId,
-            action: `${req.method} ${req.path}`,
-            jwt_token: req.headers['authorization']?.split(' ')[1],
-            role: userRole,
-            api_url: req.originalUrl,
-            method: req.method,
-            request_body: req.body,
-            response_status: res.statusCode,
-            response_body: responseBody,
-            ip_address: req.ip,
-            user_agent: req.get('user-agent')
-        });
-    } catch (error) {
-        console.error('[API Logger] Error logging API activity:', error);
-    }
 };
 
 module.exports = apiLogger;

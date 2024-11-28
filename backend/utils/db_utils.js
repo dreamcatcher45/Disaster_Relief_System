@@ -122,16 +122,14 @@ const logApiActivity = ({
     method,
     request_body,
     response_status,
-    response_body,
-    ip_address,
-    user_agent
+    response_body
 }) => {
     return new Promise((resolve, reject) => {
         const query = `
             INSERT INTO api_logs (
                 user_ref_id, action, jwt_token, role, api_url, method,
-                request_body, response_status, response_body, ip_address, user_agent
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                request_body, response_status, response_body
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         
         const params = [
@@ -143,9 +141,7 @@ const logApiActivity = ({
             method,
             request_body ? JSON.stringify(request_body) : null,
             response_status,
-            response_body ? JSON.stringify(response_body) : null,
-            ip_address,
-            user_agent
+            response_body ? JSON.stringify(response_body) : null
         ];
 
         db.run(query, params, function(err) {
