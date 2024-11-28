@@ -8,9 +8,7 @@ package-lock.json
 .env.*.local
 
 # Database
-*.db
 *.db-journal
-disaster_relief.db
 
 # Logs
 logs/

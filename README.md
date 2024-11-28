@@ -6,6 +6,8 @@ The system utilizes SQLite for data persistence with comprehensive transaction s
 
 ## Running the Application
 
+> Rename .env.example to .env in the frontend and backend directories
+
 Start the application:
 ```bash
 # Using Docker
